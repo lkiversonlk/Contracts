@@ -843,16 +843,830 @@ abstract contract ERC165Storage is ERC165 {
 }
 ```
 
+### `ERC165Checker.sol`
+
+用来检查某一个地址是否支持特定interfaceid的库.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165Checker.sol)
+
+pragma solidity ^0.8.0;
+
+import "./IERC165.sol";
+
+/**
+ * @dev Library used to query support of an interface declared via {IERC165}.
+ *
+ * Note that these functions return the actual result of the query: they do not
+ * `revert` if an interface is not supported. It is up to the caller to decide
+ * what to do in these cases.
+ */
+library ERC165Checker {
+    // As per the EIP-165 spec, no interface should ever match 0xffffffff
+    bytes4 private constant _INTERFACE_ID_INVALID = 0xffffffff;
+
+    /**
+     * @dev Returns true if `account` supports the {IERC165} interface,
+     */
+    function supportsERC165(address account) internal view returns (bool) {
+        // Any contract that implements ERC165 must explicitly indicate support of
+        // InterfaceId_ERC165 and explicitly indicate non-support of InterfaceId_Invalid
+        return
+            _supportsERC165Interface(account, type(IERC165).interfaceId) &&
+            !_supportsERC165Interface(account, _INTERFACE_ID_INVALID);
+    }
+
+    /**
+     * @dev Returns true if `account` supports the interface defined by
+     * `interfaceId`. Support for {IERC165} itself is queried automatically.
+     *
+     * See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(address account, bytes4 interfaceId) internal view returns (bool) {
+        // query support of both ERC165 as per the spec and support of _interfaceId
+        return supportsERC165(account) && _supportsERC165Interface(account, interfaceId);
+    }
+
+    /**
+     * @dev Returns a boolean array where each value corresponds to the
+     * interfaces passed in and whether they're supported or not. This allows
+     * you to batch check interfaces for a contract where your expectation
+     * is that some interfaces may not be supported.
+     *
+     * See {IERC165-supportsInterface}.
+     *
+     * _Available since v3.4._
+     */
+    function getSupportedInterfaces(address account, bytes4[] memory interfaceIds)
+        internal
+        view
+        returns (bool[] memory)
+    {
+        // an array of booleans corresponding to interfaceIds and whether they're supported or not
+        bool[] memory interfaceIdsSupported = new bool[](interfaceIds.length);
+
+        // query support of ERC165 itself
+        if (supportsERC165(account)) {
+            // query support of each interface in interfaceIds
+            for (uint256 i = 0; i < interfaceIds.length; i++) {
+                interfaceIdsSupported[i] = _supportsERC165Interface(account, interfaceIds[i]);
+            }
+        }
+
+        return interfaceIdsSupported;
+    }
+
+    /**
+     * @dev Returns true if `account` supports all the interfaces defined in
+     * `interfaceIds`. Support for {IERC165} itself is queried automatically.
+     *
+     * Batch-querying can lead to gas savings by skipping repeated checks for
+     * {IERC165} support.
+     *
+     * See {IERC165-supportsInterface}.
+     */
+    function supportsAllInterfaces(address account, bytes4[] memory interfaceIds) internal view returns (bool) {
+        // query support of ERC165 itself
+        if (!supportsERC165(account)) {
+            return false;
+        }
+
+        // query support of each interface in _interfaceIds
+        for (uint256 i = 0; i < interfaceIds.length; i++) {
+            if (!_supportsERC165Interface(account, interfaceIds[i])) {
+                return false;
+            }
+        }
+
+        // all interfaces supported
+        return true;
+    }
+
+    /**
+     * @notice Query if a contract implements an interface, does not check ERC165 support
+     * @param account The address of the contract to query for support of an interface
+     * @param interfaceId The interface identifier, as specified in ERC-165
+     * @return true if the contract at account indicates support of the interface with
+     * identifier interfaceId, false otherwise
+     * @dev Assumes that account contains a contract that supports ERC165, otherwise
+     * the behavior of this method is undefined. This precondition can be checked
+     * with {supportsERC165}.
+     * Interface identification is specified in ERC-165.
+     */
+    function _supportsERC165Interface(address account, bytes4 interfaceId) private view returns (bool) {
+        bytes memory encodedParams = abi.encodeWithSelector(IERC165.supportsInterface.selector, interfaceId);
+        (bool success, bytes memory result) = account.staticcall{gas: 30000}(encodedParams);
+        if (result.length < 32) return false;
+        return success && abi.decode(result, (bool));
+    }
+}
+```
+
+
+### `ERC1820Registry.sol`
+
+[EIP1820](https://eips.ethereum.org/EIPS/eip-1820), 提议建立一个公开合约来存储各个合约对interface的支持情况.
+
+* code
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC1820Registry.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Interface of the global ERC1820 Registry, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-1820[EIP]. Accounts may register
+ * implementers for interfaces in this registry, as well as query support.
+ *
+ * Implementers may be shared by multiple accounts, and can also implement more
+ * than a single interface for each account. Contracts can implement interfaces
+ * for themselves, but externally-owned accounts (EOA) must delegate this to a
+ * contract.
+ *
+ * {IERC165} interfaces can also be queried via the registry.
+ *
+ * For an in-depth explanation and source code analysis, see the EIP text.
+ */
+interface IERC1820Registry {
+    /**
+     * @dev Sets `newManager` as the manager for `account`. A manager of an
+     * account is able to set interface implementers for it.
+     *
+     * By default, each account is its own manager. Passing a value of `0x0` in
+     * `newManager` will reset the manager to this initial state.
+     *
+     * Emits a {ManagerChanged} event.
+     *
+     * Requirements:
+     *
+     * - the caller must be the current manager for `account`.
+     */
+    function setManager(address account, address newManager) external;
+
+    /**
+     * @dev Returns the manager for `account`.
+     *
+     * See {setManager}.
+     */
+    function getManager(address account) external view returns (address);
+
+    /**
+     * @dev Sets the `implementer` contract as ``account``'s implementer for
+     * `interfaceHash`.
+     *
+     * `account` being the zero address is an alias for the caller's address.
+     * The zero address can also be used in `implementer` to remove an old one.
+     *
+     * See {interfaceHash} to learn how these are created.
+     *
+     * Emits an {InterfaceImplementerSet} event.
+     *
+     * Requirements:
+     *
+     * - the caller must be the current manager for `account`.
+     * - `interfaceHash` must not be an {IERC165} interface id (i.e. it must not
+     * end in 28 zeroes).
+     * - `implementer` must implement {IERC1820Implementer} and return true when
+     * queried for support, unless `implementer` is the caller. See
+     * {IERC1820Implementer-canImplementInterfaceForAddress}.
+     */
+    function setInterfaceImplementer(
+        address account,
+        bytes32 _interfaceHash,
+        address implementer
+    ) external;
+
+    /**
+     * @dev Returns the implementer of `interfaceHash` for `account`. If no such
+     * implementer is registered, returns the zero address.
+     *
+     * If `interfaceHash` is an {IERC165} interface id (i.e. it ends with 28
+     * zeroes), `account` will be queried for support of it.
+     *
+     * `account` being the zero address is an alias for the caller's address.
+     */
+    function getInterfaceImplementer(address account, bytes32 _interfaceHash) external view returns (address);
+
+    /**
+     * @dev Returns the interface hash for an `interfaceName`, as defined in the
+     * corresponding
+     * https://eips.ethereum.org/EIPS/eip-1820#interface-name[section of the EIP].
+     */
+    function interfaceHash(string calldata interfaceName) external pure returns (bytes32);
+
+    /**
+     * @notice Updates the cache with whether the contract implements an ERC165 interface or not.
+     * @param account Address of the contract for which to update the cache.
+     * @param interfaceId ERC165 interface for which to update the cache.
+     */
+    function updateERC165Cache(address account, bytes4 interfaceId) external;
+
+    /**
+     * @notice Checks whether a contract implements an ERC165 interface or not.
+     * If the result is not cached a direct lookup on the contract address is performed.
+     * If the result is not cached or the cached value is out-of-date, the cache MUST be updated manually by calling
+     * {updateERC165Cache} with the contract address.
+     * @param account Address of the contract to check.
+     * @param interfaceId ERC165 interface to check.
+     * @return True if `account` implements `interfaceId`, false otherwise.
+     */
+    function implementsERC165Interface(address account, bytes4 interfaceId) external view returns (bool);
+
+    /**
+     * @notice Checks whether a contract implements an ERC165 interface or not without using nor updating the cache.
+     * @param account Address of the contract to check.
+     * @param interfaceId ERC165 interface to check.
+     * @return True if `account` implements `interfaceId`, false otherwise.
+     */
+    function implementsERC165InterfaceNoCache(address account, bytes4 interfaceId) external view returns (bool);
+
+    event InterfaceImplementerSet(address indexed account, bytes32 indexed interfaceHash, address indexed implementer);
+
+    event ManagerChanged(address indexed account, address indexed newManager);
+}
+```
+
+* 分析
+
+核心是`setInterfaceImplementer`, 和`getInterfaceImplementer`, 这里提出了一个概念, implementer, 就是对于一个合约地址和一个interface id, 一般如果合约支持该interface, implementer就是合约自己的地址.
+
+拆分开可以实现另外一个业务场景, 有一个用户账号, 用户账号是无法调用的, 但是它可以把某一个interface的支持逻辑放到一个实现合约中, 然后声称自己的账号支持某一个interface, implementer是实现合约.
+
+这样可以实现`可编程自然人账号`的概念.
+
 ### `ERC1820Impelementer.sol`
 
+按照ERC1820实现interface的implementer需要支持的interface, 用来标明其支持ERC1820.
 
+* code
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC1820Implementer.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Interface for an ERC1820 implementer, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-1820#interface-implementation-erc1820implementerinterface[EIP].
+ * Used by contracts that will be registered as implementers in the
+ * {IERC1820Registry}.
+ */
+interface IERC1820Implementer {
+    /**
+     * @dev Returns a special value (`ERC1820_ACCEPT_MAGIC`) if this contract
+     * implements `interfaceHash` for `account`.
+     *
+     * See {IERC1820Registry-setInterfaceImplementer}.
+     */
+    function canImplementInterfaceForAddress(bytes32 interfaceHash, address account) external view returns (bytes32);
+}
+```
 ## math
 
-### Math.sol
+### `Math.sol`
+
+Math Library, 提供了基于uint256的一些安全计算, 内部做了溢出检查. 这个库和后面的SafeMath是现在最常用的库之一了.
+
+* code
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.5.0) (utils/math/Math.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Standard math utilities missing in the Solidity language.
+ */
+library Math {
+    /**
+     * @dev Returns the largest of two numbers.
+     */
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    /**
+     * @dev Returns the smallest of two numbers.
+     */
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    /**
+     * @dev Returns the average of two numbers. The result is rounded towards
+     * zero.
+     */
+    function average(uint256 a, uint256 b) internal pure returns (uint256) {
+        // (a + b) / 2 can overflow.
+        return (a & b) + (a ^ b) / 2;
+    }
+
+    /**
+     * @dev Returns the ceiling of the division of two numbers.
+     *
+     * This differs from standard division with `/` in that it rounds up instead
+     * of rounding down.
+     */
+    function ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
+        // (a + b - 1) / b can overflow on addition, so we distribute.
+        return a / b + (a % b == 0 ? 0 : 1);
+    }
+}
+```
 
 ### SafeCast.sol
 
+从uint256, int256向下转型时, solidity并不会默认报错, 而是直接截断. 为了防止智能合约在这块出现预料外情况, SafeCast做了检查, 数值发生截断时会抛出异常.
+
+* code
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/math/SafeCast.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Wrappers over Solidity's uintXX/intXX casting operators with added overflow
+ * checks.
+ *
+ * Downcasting from uint256/int256 in Solidity does not revert on overflow. This can
+ * easily result in undesired exploitation or bugs, since developers usually
+ * assume that overflows raise errors. `SafeCast` restores this intuition by
+ * reverting the transaction when such an operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
+ *
+ * Can be combined with {SafeMath} and {SignedSafeMath} to extend it to smaller types, by performing
+ * all math on `uint256` and `int256` and then downcasting.
+ */
+library SafeCast {
+    /**
+     * @dev Returns the downcasted uint224 from uint256, reverting on
+     * overflow (when the input is greater than largest uint224).
+     *
+     * Counterpart to Solidity's `uint224` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 224 bits
+     */
+    function toUint224(uint256 value) internal pure returns (uint224) {
+        require(value <= type(uint224).max, "SafeCast: value doesn't fit in 224 bits");
+        return uint224(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint128 from uint256, reverting on
+     * overflow (when the input is greater than largest uint128).
+     *
+     * Counterpart to Solidity's `uint128` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 128 bits
+     */
+    function toUint128(uint256 value) internal pure returns (uint128) {
+        require(value <= type(uint128).max, "SafeCast: value doesn't fit in 128 bits");
+        return uint128(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint96 from uint256, reverting on
+     * overflow (when the input is greater than largest uint96).
+     *
+     * Counterpart to Solidity's `uint96` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 96 bits
+     */
+    function toUint96(uint256 value) internal pure returns (uint96) {
+        require(value <= type(uint96).max, "SafeCast: value doesn't fit in 96 bits");
+        return uint96(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint64 from uint256, reverting on
+     * overflow (when the input is greater than largest uint64).
+     *
+     * Counterpart to Solidity's `uint64` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 64 bits
+     */
+    function toUint64(uint256 value) internal pure returns (uint64) {
+        require(value <= type(uint64).max, "SafeCast: value doesn't fit in 64 bits");
+        return uint64(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint32 from uint256, reverting on
+     * overflow (when the input is greater than largest uint32).
+     *
+     * Counterpart to Solidity's `uint32` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 32 bits
+     */
+    function toUint32(uint256 value) internal pure returns (uint32) {
+        require(value <= type(uint32).max, "SafeCast: value doesn't fit in 32 bits");
+        return uint32(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint16 from uint256, reverting on
+     * overflow (when the input is greater than largest uint16).
+     *
+     * Counterpart to Solidity's `uint16` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 16 bits
+     */
+    function toUint16(uint256 value) internal pure returns (uint16) {
+        require(value <= type(uint16).max, "SafeCast: value doesn't fit in 16 bits");
+        return uint16(value);
+    }
+
+    /**
+     * @dev Returns the downcasted uint8 from uint256, reverting on
+     * overflow (when the input is greater than largest uint8).
+     *
+     * Counterpart to Solidity's `uint8` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 8 bits.
+     */
+    function toUint8(uint256 value) internal pure returns (uint8) {
+        require(value <= type(uint8).max, "SafeCast: value doesn't fit in 8 bits");
+        return uint8(value);
+    }
+
+    /**
+     * @dev Converts a signed int256 into an unsigned uint256.
+     *
+     * Requirements:
+     *
+     * - input must be greater than or equal to 0.
+     */
+    function toUint256(int256 value) internal pure returns (uint256) {
+        require(value >= 0, "SafeCast: value must be positive");
+        return uint256(value);
+    }
+
+    /**
+     * @dev Returns the downcasted int128 from int256, reverting on
+     * overflow (when the input is less than smallest int128 or
+     * greater than largest int128).
+     *
+     * Counterpart to Solidity's `int128` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 128 bits
+     *
+     * _Available since v3.1._
+     */
+    function toInt128(int256 value) internal pure returns (int128) {
+        require(value >= type(int128).min && value <= type(int128).max, "SafeCast: value doesn't fit in 128 bits");
+        return int128(value);
+    }
+
+    /**
+     * @dev Returns the downcasted int64 from int256, reverting on
+     * overflow (when the input is less than smallest int64 or
+     * greater than largest int64).
+     *
+     * Counterpart to Solidity's `int64` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 64 bits
+     *
+     * _Available since v3.1._
+     */
+    function toInt64(int256 value) internal pure returns (int64) {
+        require(value >= type(int64).min && value <= type(int64).max, "SafeCast: value doesn't fit in 64 bits");
+        return int64(value);
+    }
+
+    /**
+     * @dev Returns the downcasted int32 from int256, reverting on
+     * overflow (when the input is less than smallest int32 or
+     * greater than largest int32).
+     *
+     * Counterpart to Solidity's `int32` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 32 bits
+     *
+     * _Available since v3.1._
+     */
+    function toInt32(int256 value) internal pure returns (int32) {
+        require(value >= type(int32).min && value <= type(int32).max, "SafeCast: value doesn't fit in 32 bits");
+        return int32(value);
+    }
+
+    /**
+     * @dev Returns the downcasted int16 from int256, reverting on
+     * overflow (when the input is less than smallest int16 or
+     * greater than largest int16).
+     *
+     * Counterpart to Solidity's `int16` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 16 bits
+     *
+     * _Available since v3.1._
+     */
+    function toInt16(int256 value) internal pure returns (int16) {
+        require(value >= type(int16).min && value <= type(int16).max, "SafeCast: value doesn't fit in 16 bits");
+        return int16(value);
+    }
+
+    /**
+     * @dev Returns the downcasted int8 from int256, reverting on
+     * overflow (when the input is less than smallest int8 or
+     * greater than largest int8).
+     *
+     * Counterpart to Solidity's `int8` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 8 bits.
+     *
+     * _Available since v3.1._
+     */
+    function toInt8(int256 value) internal pure returns (int8) {
+        require(value >= type(int8).min && value <= type(int8).max, "SafeCast: value doesn't fit in 8 bits");
+        return int8(value);
+    }
+
+    /**
+     * @dev Converts an unsigned uint256 into a signed int256.
+     *
+     * Requirements:
+     *
+     * - input must be less than or equal to maxInt256.
+     */
+    function toInt256(uint256 value) internal pure returns (int256) {
+        // Note: Unsafe cast below is okay because `type(int256).max` is guaranteed to be positive
+        require(value <= uint256(type(int256).max), "SafeCast: value doesn't fit in an int256");
+        return int256(value);
+    }
+}
+```
+
 ### SafeMath.sol
+
+曾经Solidity (版本<0.8)在加法减法发生溢出时都不会报错, 所以当时版本的SafeMath实现在add, sub方法时都会加一层结果的检查.
+
+目前solidity已经提供了溢出检查, 因此现在的add和sub可以直接调用+和-了.
+
+* code
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
+
+pragma solidity ^0.8.0;
+
+// CAUTION
+// This version of SafeMath should only be used with Solidity 0.8 or later,
+// because it relies on the compiler's built in overflow checks.
+
+/**
+ * @dev Wrappers over Solidity's arithmetic operations.
+ *
+ * NOTE: `SafeMath` is generally not needed starting with Solidity 0.8, since the compiler
+ * now has built in overflow checking.
+ */
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            uint256 c = a + b;
+            if (c < a) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b > a) return (false, 0);
+            return (true, a - b);
+        }
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+            // benefit is lost if 'b' is also tested.
+            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+            if (a == 0) return (true, 0);
+            uint256 c = a * b;
+            if (c / a != b) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the division of two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a / b);
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a % b);
+        }
+    }
+
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a + b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a * b;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator.
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a % b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {trySub}.
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b <= a, errorMessage);
+            return a - b;
+        }
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a / b;
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting with custom message when dividing by zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryMod}.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a % b;
+        }
+    }
+}
+```
 
 ### SignedMath.sol
 
