@@ -634,22 +634,214 @@ abstract contract ConditionalEscrow is Escrow {
 
 ### `RefundEscrow.sol`
 
+抵押合约, 设置了三种状态 Active, Refund, Closed.
 
+Active时可以存入资金, Refund时各方可以自行撤出资金, Closed后只能管理员提现.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/escrow/RefundEscrow.sol)
+
+pragma solidity ^0.8.0;
+
+import "./ConditionalEscrow.sol";
+
+/**
+ * @title RefundEscrow
+ * @dev Escrow that holds funds for a beneficiary, deposited from multiple
+ * parties.
+ * @dev Intended usage: See {Escrow}. Same usage guidelines apply here.
+ * @dev The owner account (that is, the contract that instantiates this
+ * contract) may deposit, close the deposit period, and allow for either
+ * withdrawal by the beneficiary, or refunds to the depositors. All interactions
+ * with `RefundEscrow` will be made through the owner contract.
+ */
+contract RefundEscrow is ConditionalEscrow {
+    using Address for address payable;
+
+    enum State {
+        Active,
+        Refunding,
+        Closed
+    }
+
+    event RefundsClosed();
+    event RefundsEnabled();
+
+    State private _state;
+    address payable private immutable _beneficiary;
+
+    /**
+     * @dev Constructor.
+     * @param beneficiary_ The beneficiary of the deposits.
+     */
+    constructor(address payable beneficiary_) {
+        require(beneficiary_ != address(0), "RefundEscrow: beneficiary is the zero address");
+        _beneficiary = beneficiary_;
+        _state = State.Active;
+    }
+
+    /**
+     * @return The current state of the escrow.
+     */
+    function state() public view virtual returns (State) {
+        return _state;
+    }
+
+    /**
+     * @return The beneficiary of the escrow.
+     */
+    function beneficiary() public view virtual returns (address payable) {
+        return _beneficiary;
+    }
+
+    /**
+     * @dev Stores funds that may later be refunded.
+     * @param refundee The address funds will be sent to if a refund occurs.
+     */
+    function deposit(address refundee) public payable virtual override {
+        require(state() == State.Active, "RefundEscrow: can only deposit while active");
+        super.deposit(refundee);
+    }
+
+    /**
+     * @dev Allows for the beneficiary to withdraw their funds, rejecting
+     * further deposits.
+     */
+    function close() public virtual onlyOwner {
+        require(state() == State.Active, "RefundEscrow: can only close while active");
+        _state = State.Closed;
+        emit RefundsClosed();
+    }
+
+    /**
+     * @dev Allows for refunds to take place, rejecting further deposits.
+     */
+    function enableRefunds() public virtual onlyOwner {
+        require(state() == State.Active, "RefundEscrow: can only enable refunds while active");
+        _state = State.Refunding;
+        emit RefundsEnabled();
+    }
+
+    /**
+     * @dev Withdraws the beneficiary's funds.
+     */
+    function beneficiaryWithdraw() public virtual {
+        require(state() == State.Closed, "RefundEscrow: beneficiary can only withdraw while closed");
+        beneficiary().sendValue(address(this).balance);
+    }
+
+    /**
+     * @dev Returns whether refundees can withdraw their deposits (be refunded). The overridden function receives a
+     * 'payee' argument, but we ignore it here since the condition is global, not per-payee.
+     */
+    function withdrawalAllowed(address) public view override returns (bool) {
+        return state() == State.Refunding;
+    }
+}
+```
 
 
 ## introspection
 
+instrospection类合约主要关注一个合约如何自描述, 类似于正常编程语言中的反射功能, 对于一个部署好的合约, 如何判断它是否支持某些接口, Solidity没有内建机制解决这个, 因此在合约实现层面有一些解决方案.
+
 ### `ERC165.sol`
 
-    ERC165就多了一个函数, 用来表示合约是否支持某一个interface.
+[ERC165](https://eips.ethereum.org/EIPS/eip-165), 提议了一套机制让合约自描述支持的接口, 这里涉及到一个solidity语法, `type(interface).interfaceId`, 可以参考[文档](https://nhancv.medium.com/solidity-get-interface-id-and-erc165-190f0e2e3a9):
 
-    这里使用了一个机制 type(interface).interfaceId, interfaceId为该interface下所有function的signature(不考虑返回值)的hash结果.
+    一个interface的id, 是其包含的所有函数signature的hash再互相异或结果, 跟函数顺序无关, 函数的signature为函数名和参数类型, 与函数返回值无关.
 
-    function supportsInterface(bytes4 interfaceId) 
+ERC165提议合约实现接口函数 `function supportsInterface(bytes4 interfaceId)`, 来标明其是否支持某一个interface.
+
+ERC165.sol是一个空interface定义, 参考实现需要看 `ERC165Storage.sol`.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
+
+pragma solidity ^0.8.0;
+
+import "./IERC165.sol";
+
+/**
+ * @dev Implementation of the {IERC165} interface.
+ *
+ * Contracts that want to implement ERC165 should inherit from this contract and override {supportsInterface} to check
+ * for the additional interface id that will be supported. For example:
+ *
+ * ```solidity
+ * function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+ *     return interfaceId == type(MyInterface).interfaceId || super.supportsInterface(interfaceId);
+ * }
+ * ```
+ *
+ * Alternatively, {ERC165Storage} provides an easier to use but more expensive implementation.
+ */
+abstract contract ERC165 is IERC165 {
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IERC165).interfaceId;
+    }
+}
+```
 
 ### `ERC165Storage.sol`
 
-    做了一个map来存储支持的interface, 其它函数可以继承该函数, 然后调用 _registerInterface来声明对某个interface的支持
+继承了ERC165合约, 默认支持ERC165, 其它的interface需要owner自己注册, 内部用一个map来存储支持的interfaceid, 但有一个问题是这种实现是没有检查的, 也就是合约可以任意声称它支持某一个interface.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165Storage.sol)
+
+pragma solidity ^0.8.0;
+
+import "./ERC165.sol";
+
+/**
+ * @dev Storage based implementation of the {IERC165} interface.
+ *
+ * Contracts may inherit from this and call {_registerInterface} to declare
+ * their support of an interface.
+ */
+abstract contract ERC165Storage is ERC165 {
+    /**
+     * @dev Mapping of interface ids to whether or not it's supported.
+     */
+    mapping(bytes4 => bool) private _supportedInterfaces;
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return super.supportsInterface(interfaceId) || _supportedInterfaces[interfaceId];
+    }
+
+    /**
+     * @dev Registers the contract as an implementer of the interface defined by
+     * `interfaceId`. Support of the actual ERC165 interface is automatic and
+     * registering its interface id is not required.
+     *
+     * See {IERC165-supportsInterface}.
+     *
+     * Requirements:
+     *
+     * - `interfaceId` cannot be the ERC165 invalid interface (`0xffffffff`).
+     */
+    function _registerInterface(bytes4 interfaceId) internal virtual {
+        require(interfaceId != 0xffffffff, "ERC165: invalid interface id");
+        _supportedInterfaces[interfaceId] = true;
+    }
+}
+```
 
 ### `ERC1820Impelementer.sol`
 
