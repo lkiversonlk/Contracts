@@ -6,7 +6,7 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
 
 加密类功能相关
 
-* `draft-EIP712.sol`
+### `draft-EIP712.sol`
 
     用来做签名和验证签名的库, 这里主要提供的是基于不同链的id等数据计算出一个separator, 来对任意数据做签名, 基于链参数, 合约地址等合成的签名参数, 可以防止跨链重放攻击.
 
@@ -137,7 +137,7 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
     address signer = ECDSA.recover(digest, signature);
     ```
 
-* `ECDSA.sol`
+### `ECDSA.sol`
 
     用来做数字签名验证的合约, solidity提供了ecrecover原语, 但是存在被恶意伪造和hack的可能, ECDSA库提供的recover库做了一些额外限定, 另外提供了标准的SignHash方法供使用.
 
@@ -377,7 +377,7 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
     ```
 
 
-* `MerkelProof.sol`
+### `MerkelProof.sol`
 
     提供默克尔树的验证相关功能库.
 
@@ -457,7 +457,7 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
         验证时就是判断得到的根部root hash是否等于实际的root hash.
     
 
-* `SignatureChecker.sol`
+### `SignatureChecker.sol`
 
     集成了ECDSA库的recover功能, 同时支持了ERC1271的合约可撤回签名, 验证签名时, 会首先尝试用ECDSA验证, 如果验证不通过, 再尝试ERC1271去调用合约验证签名.
 
@@ -505,11 +505,17 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
         }
     }
     ``
-### escrow
+## escrow
 
-### introspection
+### `Escrow.sol`
 
-* `ERC165.sol`
+### `RefundEscrow.sol`
+
+### `ConditionalEscrow.sol`
+
+## introspection
+
+### `ERC165.sol`
 
     ERC165就多了一个函数, 用来表示合约是否支持某一个interface.
 
@@ -517,36 +523,36 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
 
     function supportsInterface(bytes4 interfaceId) 
 
-* `ERC165Storage.sol`
+### `ERC165Storage.sol`
 
     做了一个map来存储支持的interface, 其它函数可以继承该函数, 然后调用 _registerInterface来声明对某个interface的支持
 
-* `ERC1820Impelementer.sol`
+### `ERC1820Impelementer.sol`
 
 
-### math
+## math
 
-#### Math.sol
+### Math.sol
 
-#### SafeCast.sol
+### SafeCast.sol
 
-#### SafeMath.sol
+### SafeMath.sol
 
-#### SignedMath.sol
+### SignedMath.sol
 
-#### SignedSafeMath.sol
+### SignedSafeMath.sol
 
-### structs
+## structs
 
-#### BitMaps.sol
+### BitMaps.sol
 
-#### DoubleEndedQueue.sol
+### DoubleEndedQueue.sol
 
-#### EnumerableMap.sol
+### EnumerableMap.sol
 
-#### EnumerableSet.sol
+### EnumerableSet.sol
 
-### Address.sol
+## Address.sol
 
 `library Address`
 
@@ -554,45 +560,45 @@ utils是所有辅助类合约, 阅读其他合约前最好先了解utils里的�
 1. sendValue // use call instead of transfer
 1. function
 
-### Array.sol
+## Array.sol
 
-### Base64.sol
+## Base64.sol
 
 提供了base64编码的函数
 
-### Checkpoints.sol
+## Checkpoints.sol
 
 一个library, 可以存储和读取指定的history value 
 
-### Context.sol
+## Context.sol
 
 提供了msgSender和msdData的函数式访问方法
 
-### Counters.sol
+## Counters.sol
 
-### Create2.sol
+## Create2.sol
 
 create2 library, 提供函数提前计算地址
 
-### Multicall.sol
+## Multicall.sol
 
 1. function multicall(bytes[] calldata data) external virtual retuns (bytes[] memory results) {
 
 }
 
-### StorageSlot.sol
+## StorageSlot.sol
 
 
 基于汇编slot语法, 提供一个对于固定存储位置的访问功能.
 
 
-### Strings.sol
+## Strings.sol
 
 1. toString(uint256 value) returns (string memory)
 
 1. toHexString(uint256 value)
 
-### Timers.sol
+## Timers.sol
 
 struct Timestamp {
     uint64 _deadline;
