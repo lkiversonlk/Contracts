@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星火链Solidity合约开发 &mdash; 星火链开发者手册 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="星火链Javascript合约开发" href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> 星火链开发者手册
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">星火链应用开发手册:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="%E6%A6%82%E8%BF%B0.html">概述</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B.html">快速上手</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BE%E5%BC%80%E5%8F%91%E5%9F%BA%E7%A1%80.html">星火链开发基础</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BESDK.html">星火链SDK</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html">星火链Javascript合约开发</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">星火链Solidity合约开发</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">星火链Solidity新特性</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">星火链Solidity语言主要变动</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#op">星火链op支持列表</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">星火链Solidity开发基础</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id4">数据类型</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">星火链Solidity编译器</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">星火链开发者手册</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>星火链Solidity合约开发</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/星火链Solidity合约开发.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="solidity">
+<h1>星火链Solidity合约开发<a class="headerlink" href="#solidity" title="Permalink to this headline"></a></h1>
+<p>Solidity智能合约使用Spark-Evm引擎，脱胎于原生以太坊EVM架构实现。在星火链合约账户中，Solidity编译后生成的opCode指令码会存储到合约账户中，用于合约的执行。</p>
+<p>本目录的文档主要介绍在星火链合约平台中支持的 Solidity 合约的特性、语法、功能等。星火链平台支持的solidity语法基本与官方solidity基本一致，目前支持0.4.26版本，可以参考官方文档：<a class="reference external" href="https://solidity.readthedocs.io/en/v0.4.26/">https://solidity.readthedocs.io/en/v0.4.26/</a></p>
+<section id="id1">
+<h2>星火链Solidity新特性<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h2>
+<section id="id2">
+<h3>星火链Solidity语言主要变动<a class="headerlink" href="#id2" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p><strong>星火链bid地址支持</strong>:</p>
+<p>星火链solidity address表示的地址，长度为24字节, 以太坊solidity中address表示的地址是20字节。</p>
+</li>
+<li><p><strong>有效地址检查</strong>:</p>
+<p>在星火链solidity合约内向一个未激活(没有转入转出交易)的地址转账，合约会异常终止；而以太坊对此没有限制。</p>
+</li>
+<li><p><strong>指令支持</strong></p>
+<p>星火链上solidity不支持STATICCALL, CALLCODE, SELFDESCTRUCT命令.</p>
+</li>
+<li><p><strong>链机制不同导致的语言diff</strong></p>
+<p>星火链上solidity不支持EXTCODEHASH,COINBASE, DIFFICULT指令.</p>
+</li>
+<li><p><strong>函数递归深度限制</strong></p>
+<p>星火链solidity函数调用递归深度最大为4层, 以太坊为1024.</p>
+</li>
+</ol>
+</section>
+<section id="op">
+<h3>星火链op支持列表<a class="headerlink" href="#op" title="Permalink to this headline"></a></h3>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>指令表</p></th>
+<th class="head"><p>星火链是否支持</p></th>
+<th class="head"><p>以太坊是否支持</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>CREATE2</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>CREATE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>DELEGATECALL</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>STATICCALL</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CALL</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>CALLCODE</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>RETURN</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>REVERT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SELFDESTRUCT</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>STOP</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>MLOAD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>MSTORE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>MSTORE8</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SHA3</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>LOG0</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>LOG1</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>LOG2</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>LOG3</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>LOG4</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>EXP</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>ADD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>MUL</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SUB</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>DIV</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SDIV</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>MOD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SMOD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>NOT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>LT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>GT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SLT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SGT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>EQ</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>ISZERO</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>AND</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>OR</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>XOR</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>BYTE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SHL</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SHR</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SAR</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>ADDMOD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>MULMOD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SIGNEXTEND</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>ADDRESS</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>ORIGIN</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>BALANCE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>CALLER</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CALLVALUE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>CALLDATALOAD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CALLDATASIZE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>RETURNDATASIZE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CODESIZE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>EXTCODESIZE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CALLDATACOPY</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>RETURNDATACOPY</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>EXTCODEHASH</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>CODECOPY</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>EXTCODECOPY</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>GASPRICE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>BLOCKHASH</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>COINBASE</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>TIMESTAMP</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>NUMBER</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>DIFFICULTY</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>GASLIMIT</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>CHAINID</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SELFBALANCE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>POP</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>PUSHC</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>PUSH1/32</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>JUMP</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>JUMPI</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>JUMPC</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>JUMPCI</p></td>
+<td><p>否</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>DUP1/16</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SWAP1/16</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>SLOAD</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>SSTORE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>PC</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>MSIZE</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>GAS</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>JUMPDEST</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>INVALID</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="id3">
+<h2>星火链Solidity开发基础<a class="headerlink" href="#id3" title="Permalink to this headline"></a></h2>
+<section id="id4">
+<h3>数据类型<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h3>
+<ul>
+<li><p><strong>星火链交易支持的数据类型</strong></p>
+<p><strong>基本类型：</strong></p>
+<p>uint&lt;M&gt;：M 位的无符号整数，0 &lt; M &lt;= 256、M % 8 == 0。例如：uint32，uint8，uint256。</p>
+<p>int&lt;M&gt;：以 2 的补码作为符号的 M 位整数，0 &lt; M &lt;= 256、M % 8 == 0。</p>
+<p>uint、int：uint256、int256 各自的同义词。在计算和 函数选择器 中，通常使用 uint256 和 int256。</p>
+<p>bool：等价于 uint8，取值限定为 0 或 1 。在计算和 函数选择器 中，通常使用 bool。</p>
+<p>bytes&lt;M&gt;：M 字节的二进制类型，0 &lt; M &lt;= 32。</p>
+<p>byte：等价于bytes1。</p>
+<p>bytes：动态大小的字节序列。</p>
+<p>string：动态大小的 unicode 字符串，通常呈现为 UTF-8 编码。</p>
+<p><strong>一维数组：</strong></p>
+<p>type[M](type=uint/int/address) 有 M 个元素的定长数组，M &gt;= 0，数组元素为给定类型。</p>
+<p><strong>二维数组：</strong></p>
+<p>type[][](type=uint/int)</p>
+</li>
+<li><p><strong>平台建议使用数据类型</strong></p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>数据类型</p></th>
+<th class="head"><p>参考样例</p></th>
+<th class="head"><p>合约内部是否支持</p></th>
+<th class="head"><p>输入参数是否支持</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>bool</p></td>
+<td><p>bool a = true</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>uint</p></td>
+<td><p>uint a = 1</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>uint8 ~ uint256</p></td>
+<td><p>uint8 a = 1</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>int</p></td>
+<td><p>int a = 1</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>int8 ~ int256</p></td>
+<td><p>int8 a = 1</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>bytes</p></td>
+<td><p>bytes a = “test”</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>bytes1 ~ bytes32</p></td>
+<td><p>bytes1 a = “a”</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>string</p></td>
+<td><p>string a = “test”</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>int[]</p></td>
+<td><p>int256[] a = [1,2,3,4,5]</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-odd"><td><p>uint[]</p></td>
+<td><p>uint256[] a = [1,2,3,4,5]</p></td>
+<td><p>是</p></td>
+<td><p>是</p></td>
+</tr>
+<tr class="row-even"><td><p>bytes1[] ~ bytes32[]</p></td>
+<td><p>bytes4[] asd = new bytes4;</p></td>
+<td><p>是</p></td>
+<td><p>否</p></td>
+</tr>
+<tr class="row-odd"><td><p>string[]</p></td>
+<td><p>string[] a = [“adbc”,”dg”]</p></td>
+<td><p>是</p></td>
+<td><p>否</p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td><p>enum a {a,b,c}</p></td>
+<td><p>是</p></td>
+<td><p>否</p></td>
+</tr>
+<tr class="row-odd"><td><p>struct</p></td>
+<td><p>struct a { string name;}</p></td>
+<td><p>是</p></td>
+<td><p>否</p></td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+</section>
+<section id="id5">
+<h3>星火链Solidity编译器<a class="headerlink" href="#id5" title="Permalink to this headline"></a></h3>
+<p>​由于指令集支持和地址表示法的区别, 星火链提供了专门的编译器来编译星火链Solidity合约. 本章指导开发者使用官方编译器编译星火链智能合约.</p>
+<ol class="arabic">
+<li><p>镜像下载</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker pull caictdevelop/bif-solidity:v0.4.26
+</pre></div>
+</div>
+</li>
+<li><p>选项说明</p>
+<p>镜像下载之后，需要启动镜像进入容器中，可以使用solc –help 来查看此工具支持的参数说明。</p>
+<p>常用选项说明：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--opcodes            Opcodes of the contracts.
+--bin                Binary of the contracts <span class="k">in</span> hex.
+--abi                ABI specification of the contracts.
+</pre></div>
+</div>
+</li>
+<li><p>编写测试合约</p>
+<p>用一个最简单的测试合约做例子.</p>
+<div class="highlight-solidity notranslate"><div class="highlight"><pre><span></span><span class="k">pragma solidity</span><span class="w"> </span><span class="o">^</span><span class="k">0.4.26</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">contract</span><span class="w"> </span><span class="ni">test</span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kt">function</span><span class="w"> </span><span class="nv">testfun</span><span class="p">()</span><span class="w"> </span><span class="kt">public</span><span class="w"> </span><span class="kt">returns</span><span class="p">(</span><span class="kt">string</span><span class="p">){</span><span class="w"></span>
+<span class="w">        </span><span class="kt">return</span><span class="w"> </span><span class="s2">&quot;hello world&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+<li><p>编译合约</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># 启动镜像</span>
+docker run -it caictdevelop/bif-solidity:v0.4.26 /bin/bash
+<span class="nb">cd</span> /root/solidity/build/solc
+./solc --bin test.sol
+
+<span class="o">=======</span> test.sol:test <span class="o">=======</span>
+Binary: 
+608060405234801561001057600080fd5b5061013f806100206000396000f300608060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063031153c214610046575b600080fd5b34801561005257600080fd5b5061005b6100d6565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561009b578082015181840152602081019050610080565b50505050905090810190601f1680156100c85780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b60606040805190810160405280600b81526020017f68656c6c6f20776f726c640000000000000000000000000000000000000000008152509050905600a165627a7a723058201a4c9bfcbee5d683f6e46525cf17db2dd46a6ecf5c3f45cbdd148229639263480029
+</pre></div>
+</div>
+</li>
+<li><p>部署调用</p>
+<p>后续的合约部署调用流程与javascript合约类似, 可以参见星火链SDK说明.</p>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html" class="btn btn-neutral float-left" title="星火链Javascript合约开发" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, 中国信息通信研究院.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

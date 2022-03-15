@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星火链SDK &mdash; 星火链开发者手册 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="星火链Javascript合约开发" href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html" />
+    <link rel="prev" title="星火链开发基础" href="%E6%98%9F%E7%81%AB%E9%93%BE%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> 星火链开发者手册
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">星火链应用开发手册:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="%E6%A6%82%E8%BF%B0.html">概述</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B.html">快速上手</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BE%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html">星火链开发基础</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">星火链SDK</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sdk-api">SDK 离线API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">账户生成</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#keystore">加密私钥生成keystore</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">SDK 在线API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">初始化SDK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">账户处理接口</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#block">Block相关接口</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transaction">Transaction相关接口</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">合约相关接口</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html">星火链Javascript合约开发</a></li>
+<li class="toctree-l1"><a class="reference internal" href="%E6%98%9F%E7%81%AB%E9%93%BESolidity%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html">星火链Solidity合约开发</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">星火链开发者手册</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>星火链SDK</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/星火链SDK.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sdk">
+<h1>星火链SDK<a class="headerlink" href="#sdk" title="Permalink to this headline"></a></h1>
+<p>为了方便开发者接入, 星火链提供了基于各种语言的SDK. 本章以Java SDK为例, 描述星火链SDK提供的主要功能和使用示例</p>
+<section id="sdk-api">
+<h2>SDK 离线API<a class="headerlink" href="#sdk-api" title="Permalink to this headline"></a></h2>
+<p>离线API主要是账户和密码学相关API, 不需要连接星火链网RPC接口也能工作. 主要接口如下:</p>
+<section id="id1">
+<h3>账户生成<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"> <span class="pre">KeyPairEntity.getBidAndKeyPair</span></code></p></li>
+<li><p>用途:</p>
+<p>用来生成一个星火链bid地址和对应私钥</p>
+</li>
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cn.bif.model.crypto.KeyPairEntity</span><span class="p">;</span>
+
+<span class="n">KeyPairEntity</span> <span class="n">keypair</span> <span class="o">=</span> <span class="n">KeyPairEntity</span><span class="p">.</span><span class="na">getBidAndKeyPair</span><span class="p">();</span>
+<span class="n">String</span> <span class="n">encAddress</span> <span class="o">=</span> <span class="n">keypair</span><span class="p">.</span><span class="na">getEncAddress</span><span class="p">();</span>
+<span class="n">String</span> <span class="n">encPublicKey</span> <span class="o">=</span> <span class="n">keypair</span><span class="p">.</span><span class="na">getEncPublicKey</span><span class="p">();</span>
+<span class="n">String</span> <span class="n">encPrivateKey</span> <span class="o">=</span> <span class="n">keypair</span><span class="p">.</span><span class="na">getEncPrivateKey</span><span class="p">();</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">rawPublicKey</span> <span class="o">=</span> <span class="n">keypair</span><span class="p">.</span><span class="na">getRawPublicKey</span><span class="p">();</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">rawPrivateKey</span> <span class="o">=</span> <span class="n">keypair</span><span class="p">.</span><span class="na">getRawPrivateKey</span><span class="p">();</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">keypair</span><span class="p">))</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="keystore">
+<h3>加密私钥生成keystore<a class="headerlink" href="#keystore" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">KeyStore.generateKeyStore</span></code></p></li>
+<li><p>用途:</p>
+<p>用一个密码来加密保护私钥, 得到一个json表示的keystore, 对应密码不泄露的情况下, 可以公开保存.</p>
+</li>
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nn">cn.bif.sdkSamples.encryption.example</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nn">cn.bif.common.JsonUtils</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">cn.bif.module.encryption.crypto.keystore.KeyStore</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">cn.bif.module.encryption.crypto.keystore.entity.KeyStoreEty</span><span class="p">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.HashMap</span><span class="p">;</span>
+<span class="kn">import</span> <span class="nn">java.util.Map</span><span class="p">;</span>
+
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestCrypto</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span> <span class="n">argv</span><span class="o">[]</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">String</span> <span class="n">encPrivateKey</span> <span class="o">=</span> <span class="s">&quot;priSPKqru2zMzeb14XWxPNM1sassFeqyyUZotCAYcvCjhNof7t&quot;</span><span class="p">;</span>
+        <span class="n">String</span> <span class="n">password</span> <span class="o">=</span> <span class="s">&quot;bif8888&quot;</span><span class="p">;</span>
+        <span class="n">TestKeyStoreWithPrivateKey</span><span class="p">(</span><span class="n">encPrivateKey</span><span class="p">,</span> <span class="n">password</span><span class="p">);</span>
+
+    <span class="p">}</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">TestKeyStoreWithPrivateKey</span><span class="p">(</span><span class="n">String</span> <span class="n">encPrivateKey</span><span class="p">,</span> <span class="n">String</span> <span class="n">password</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="n">Math</span><span class="p">.</span><span class="na">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+            <span class="c1">//生成keystore-1</span>
+            <span class="n">KeyStoreEty</span> <span class="n">returEencPrivateKey</span> <span class="o">=</span> <span class="n">KeyStore</span><span class="p">.</span><span class="na">generateKeyStore</span><span class="p">(</span><span class="n">password</span><span class="p">,</span><span class="n">encPrivateKey</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">returEencPrivateKey</span><span class="p">));</span>
+
+            <span class="c1">//生成keystore-2</span>
+            <span class="n">KeyStoreEty</span> <span class="n">keyStore1</span> <span class="o">=</span> <span class="n">KeyStore</span><span class="p">.</span><span class="na">generateKeyStore</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">encPrivateKey</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">keyStore1</span><span class="p">));</span>
+
+            <span class="c1">//从keystore反解出私钥</span>
+            <span class="n">String</span> <span class="n">keyStoreStr</span><span class="o">=</span><span class="s">&quot;{\&quot;address\&quot;:\&quot;did:bid:efEScJgGPf54vfU8ciEjjugkJLB4xYzp\&quot;,\&quot;aesctr_iv\&quot;:\&quot;EEDDD37CEB6864030124142CEB081BCD\&quot;,\&quot;cypher_text\&quot;:\&quot;7274705F65388E30338A2D69AE2241DBABCF66550C0453BEE30CFA45F02E04D08FAC551B46171531CA067B6E85BC342F43C8\&quot;,\&quot;scrypt_params\&quot;:{\&quot;n\&quot;:16384,\&quot;p\&quot;:1,\&quot;r\&quot;:8,\&quot;salt\&quot;:\&quot;82D37133C13525EDE4EF19DCD692592FC1685B5EDAABA8C943EA2C1AD4596FB3\&quot;},\&quot;version\&quot;:2}&quot;</span><span class="p">;</span>
+            <span class="n">String</span> <span class="n">privateKey</span> <span class="o">=</span> <span class="n">KeyStore</span><span class="p">.</span><span class="na">decipherKeyStore</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJavaObject</span><span class="p">(</span><span class="n">keyStoreStr</span><span class="p">,</span><span class="n">KeyStoreEty</span><span class="p">.</span><span class="na">class</span><span class="p">));</span>
+            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">privateKey</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">e</span><span class="p">.</span><span class="na">printStackTrace</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="id2">
+<h2>SDK 在线API<a class="headerlink" href="#id2" title="Permalink to this headline"></a></h2>
+<p>在线API主要用于向星火链上发出交易和查询合约, 需要初始化SDK连接后使用.</p>
+<section id="id3">
+<h3>初始化SDK<a class="headerlink" href="#id3" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">cn.bif.api.BIFSDK</span><span class="p">;</span>
+
+<span class="n">BIFSDK</span> <span class="n">sdk</span> <span class="o">=</span> <span class="n">BIFSDK</span><span class="p">.</span><span class="na">getInstance</span><span class="p">(</span><span class="n">SDK_INSTANCE_URL</span><span class="p">);</span>   <span class="c1">//SDK_INSTANCE_URL为星火链RPC地址</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="id4">
+<h3>账户处理接口<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>查询账户信息</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">BIFAccountGetInfoRequest</span></code></p></li>
+<li><p>用途:</p>
+<p>用来获取一个账户当前信息</p>
+</li>
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">String</span> <span class="n">accountAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:efnVUgqQFfYeu97ABf6sGm3WFtVXHZB2&quot;</span><span class="p">;</span>
+<span class="n">BIFAccountGetInfoRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFAccountGetInfoRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setAddress</span><span class="p">(</span><span class="n">accountAddress</span><span class="p">);</span>
+<span class="c1">// 调用getAccount接口</span>
+<span class="n">BIFAccountGetInfoResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFAccountService</span><span class="p">().</span><span class="na">getAccount</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>获取账户nonce</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">BIFAccountGetNonceRequest</span></code></p></li>
+<li><p>用途:</p>
+<p>用来获取一个账户当前nonce值, 有关nonce含义, 请参照星火链开发基础章节.</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">String</span> <span class="n">accountAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:efnVUgqQFfYeu97ABf6sGm3WFtVXHZB2&quot;</span><span class="p">;</span>
+<span class="n">BIFAccountGetNonceRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFAccountGetNonceRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setAddress</span><span class="p">(</span><span class="n">accountAddress</span><span class="p">);</span>
+<span class="n">BIFAccountGetNonceResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFAccountService</span><span class="p">().</span><span class="na">getNonce</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Account nonce:&quot;</span> <span class="o">+</span> <span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">().</span><span class="na">getNonce</span><span class="p">());</span>
+<span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>获取账户余额</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">BIFAccountGetBalanceRequest</span></code></p></li>
+<li><p>用途:</p>
+<p>用来获取一个账户当前的XHT余额.</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">String</span> <span class="n">accountAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:efzE8AcDgWUeNbgujA5hK3oUeuG9k19b&quot;</span><span class="p">;</span>
+<span class="n">BIFAccountGetBalanceRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFAccountGetBalanceRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setAddress</span><span class="p">(</span><span class="n">accountAddress</span><span class="p">);</span>
+
+<span class="n">BIFAccountGetBalanceResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFAccountService</span><span class="p">().</span><span class="na">getAccountBalance</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;Gas balance：&quot;</span> <span class="o">+</span> <span class="n">ToBaseUnit</span><span class="p">.</span><span class="na">ToGas</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">().</span><span class="na">getBalance</span><span class="p">().</span><span class="na">toString</span><span class="p">())</span> <span class="o">+</span> <span class="s">&quot;Gas&quot;</span><span class="p">);</span>
+<span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</section>
+<section id="block">
+<h3>Block相关接口<a class="headerlink" href="#block" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>获取当前块高度</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getBlockNumber</span></code></p></li>
+<li><p>用途:</p>
+<p>获取当前链上最新的Block号</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">BIFBlockGetNumberResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFBlockService</span><span class="p">().</span><span class="na">getBlockNumber</span><span class="p">();</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>获取指定块内的交易列表</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getTransactions(request)</span></code></p></li>
+<li><p>用途:</p>
+<p>给定block号,获取该block内的交易列表信息</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">Long</span> <span class="n">blockNumber</span> <span class="o">=</span> <span class="mi">1L</span><span class="p">;</span>
+<span class="n">BIFBlockGetTransactionsRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFBlockGetTransactionsRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setBlockNumber</span><span class="p">(</span><span class="n">blockNumber</span><span class="p">);</span>
+<span class="n">BIFBlockGetTransactionsResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFBlockService</span><span class="p">().</span><span class="na">getTransactions</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>获取指定块的统计信息</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getBlockInfo(request)</span></code></p></li>
+<li><p>用途:</p>
+<p>给定block号, 查询指定block的信息.</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span> <span class="n">BIFBlockGetInfoRequest</span> <span class="n">blockGetInfoRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFBlockGetInfoRequest</span><span class="p">();</span>
+<span class="n">blockGetInfoRequest</span><span class="p">.</span><span class="na">setBlockNumber</span><span class="p">(</span><span class="mi">10L</span><span class="p">);</span>
+<span class="n">BIFBlockGetInfoResponse</span> <span class="n">lockGetInfoResponse</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFBlockService</span><span class="p">().</span><span class="na">getBlockInfo</span><span class="p">(</span><span class="n">blockGetInfoRequest</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">lockGetInfoResponse</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">BIFBlockGetInfoResult</span> <span class="n">lockGetInfoResult</span> <span class="o">=</span> <span class="n">lockGetInfoResponse</span><span class="p">.</span><span class="na">getResult</span><span class="p">();</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">lockGetInfoResult</span><span class="p">));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">lockGetInfoResponse</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>查询最新块的信息</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getBlockLatestInfo</span></code></p></li>
+<li><p>用途:</p>
+<p>获取当前最新块的信息.</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">BIFBlockGetLatestInfoResponse</span> <span class="n">lockGetLatestInfoResponse</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFBlockService</span><span class="p">().</span><span class="na">getBlockLatestInfo</span><span class="p">();</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">lockGetLatestInfoResponse</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">BIFBlockGetLatestInfoResult</span> <span class="n">lockGetLatestInfoResult</span> <span class="o">=</span> <span class="n">lockGetLatestInfoResponse</span><span class="p">.</span><span class="na">getResult</span><span class="p">();</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">lockGetLatestInfoResult</span><span class="p">));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">lockGetLatestInfoResponse</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</section>
+<section id="transaction">
+<h3>Transaction相关接口<a class="headerlink" href="#transaction" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>获取指定交易相关信息</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getTransactionInfo</span></code></p></li>
+<li><p>用途:</p>
+<p>获取指定交易的详细信息</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">BIFTransactionGetInfoRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFTransactionGetInfoRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setHash</span><span class="p">(</span><span class="s">&quot;8f3d53f0dfb5ae652d6ed93ca9512f57c2203fe0ffefdc7649908945ad96a730&quot;</span><span class="p">);</span>
+<span class="n">BIFTransactionGetInfoResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFTransactionService</span><span class="p">().</span><span class="na">getTransactionInfo</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>提交交易</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">BIFSubmit</span></code></p></li>
+<li><p>用途:</p>
+<p>提交交易到星火链网</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// 初始化参数</span>
+<span class="n">String</span> <span class="n">senderPrivateKey</span> <span class="o">=</span> <span class="s">&quot;priSPKkWVk418PKAS66q4bsiE2c4dKuSSafZvNWyGGp2sJVtXL&quot;</span><span class="p">;</span>
+<span class="c1">//序列化交易</span>
+<span class="n">String</span> <span class="n">serialization</span> <span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">;</span>
+<span class="c1">//签名</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">signBytes</span> <span class="o">=</span> <span class="n">PrivateKeyManager</span><span class="p">.</span><span class="na">sign</span><span class="p">(</span><span class="n">HexFormat</span><span class="p">.</span><span class="na">hexToByte</span><span class="p">(</span><span class="n">serialization</span><span class="p">),</span> <span class="n">senderPrivateKey</span><span class="p">);</span>
+<span class="n">String</span> <span class="n">publicKey</span> <span class="o">=</span> <span class="n">PrivateKeyManager</span><span class="p">.</span><span class="na">getEncPublicKey</span><span class="p">(</span><span class="n">senderPrivateKey</span><span class="p">);</span>
+<span class="c1">//提交交易</span>
+<span class="n">BIFTransactionSubmitRequest</span> <span class="n">submitRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFTransactionSubmitRequest</span><span class="p">();</span>
+<span class="n">submitRequest</span><span class="p">.</span><span class="na">setSerialization</span><span class="p">(</span><span class="n">serialization</span><span class="p">);</span>
+<span class="n">submitRequest</span><span class="p">.</span><span class="na">setPublicKey</span><span class="p">(</span><span class="n">publicKey</span><span class="p">);</span>
+<span class="n">submitRequest</span><span class="p">.</span><span class="na">setSignData</span><span class="p">(</span><span class="n">HexFormat</span><span class="p">.</span><span class="na">byteToHex</span><span class="p">(</span><span class="n">signBytes</span><span class="p">));</span>
+<span class="c1">// 调用bifSubmit接口</span>
+<span class="n">BIFTransactionSubmitResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFTransactionService</span><span class="p">().</span><span class="na">BIFSubmit</span><span class="p">(</span><span class="n">submitRequest</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="s">&quot;error: &quot;</span> <span class="o">+</span> <span class="n">response</span><span class="p">.</span><span class="na">getErrorDesc</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</section>
+<section id="id5">
+<h3>合约相关接口<a class="headerlink" href="#id5" title="Permalink to this headline"></a></h3>
+<ol class="arabic">
+<li><p>部署合约</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">contractCreate</span></code></p></li>
+<li><p>用途:</p>
+<p>部署合约到星火链上</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">String</span> <span class="n">senderAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:ef21AHDJWnFfYQ3Qs3kMxo64jD2KATwBz&quot;</span><span class="p">;</span>
+<span class="n">String</span> <span class="n">senderPrivateKey</span> <span class="o">=</span> <span class="s">&quot;priSPKkL8XpxHiRLuNoxph2ThSbexeRUGEETprvuVHkxy2yBDp&quot;</span><span class="p">;</span>
+<span class="n">String</span> <span class="n">payload</span> <span class="o">=</span> <span class="s">&quot;\&quot;use strict\&quot;;function init(bar){/*init whatever you want*/return;}function main(input){let para = JSON.parse(input);if (para.do_foo)\n            {\n              let x = {\n                \&#39;hello\&#39; : \&#39;world\&#39;\n              };\n            }\n          }\n          \n          function query(input)\n          { \n            return input;\n          }\n        &quot;</span><span class="p">;</span>
+<span class="n">Long</span> <span class="n">initBalance</span> <span class="o">=</span> <span class="n">ToBaseUnit</span><span class="p">.</span><span class="na">ToUGas</span><span class="p">(</span><span class="s">&quot;1&quot;</span><span class="p">);</span>
+
+<span class="n">BIFContractCreateRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFContractCreateRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setSenderAddress</span><span class="p">(</span><span class="n">senderAddress</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setPrivateKey</span><span class="p">(</span><span class="n">senderPrivateKey</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setInitBalance</span><span class="p">(</span><span class="n">initBalance</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setPayload</span><span class="p">(</span><span class="n">payload</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setRemarks</span><span class="p">(</span><span class="s">&quot;create contract&quot;</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setType</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setFeeLimit</span><span class="p">(</span><span class="mi">10000000000L</span><span class="p">);</span>
+
+<span class="c1">// 调用bifContractCreate接口</span>
+<span class="n">BIFContractCreateResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFContractService</span><span class="p">().</span><span class="na">contractCreate</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>从部署交易中获取合约地址</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getContractAddress</span></code></p></li>
+<li><p>用途:</p>
+<p>提供部署合约的交易哈希, 返回合约地址</p>
+</li>
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// Init request</span>
+<span class="n">String</span> <span class="n">hash</span> <span class="o">=</span> <span class="s">&quot;ff6a9d1a0c0011fbb9f51cfb99e4cd5e7c31380046fda3fd6e0daae44d1d4648&quot;</span><span class="p">;</span>
+<span class="n">BIFContractGetAddressRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFContractGetAddressRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setHash</span><span class="p">(</span><span class="n">hash</span><span class="p">);</span>
+
+<span class="c1">// Call getAddress</span>
+<span class="n">BIFContractGetAddressResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFContractService</span><span class="p">().</span><span class="na">getContractAddress</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>获取合约相关信息</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">getContractInfo</span></code></p></li>
+<li><p>用途:</p>
+<p>指定合约地址, 获取合约相关信息.</p>
+</li>
+<li><p>示例</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// Init request</span>
+<span class="n">BIFContractGetInfoRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFContractGetInfoRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setContractAddress</span><span class="p">(</span><span class="s">&quot;did:bid:efiBacNvVSnr5QxgB282XGWkg4RXLLxL&quot;</span><span class="p">);</span>
+
+<span class="c1">// Call getContractInfo</span>
+<span class="n">BIFContractGetInfoResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFContractService</span><span class="p">().</span><span class="na">getContractInfo</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>查询合约</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">contractQuery</span></code></p></li>
+<li><p>用途:</p>
+<p>调用合约Query接口, 查询合约数据</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// Init variable</span>
+<span class="c1">// Contract address</span>
+<span class="n">String</span> <span class="n">contractAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:ef2gAT82SGdnhj87wQWb9suPKLbnk9NP&quot;</span><span class="p">;</span>
+
+<span class="c1">// Init request</span>
+<span class="n">BIFContractCallRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFContractCallRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setContractAddress</span><span class="p">(</span><span class="n">contractAddress</span><span class="p">);</span>
+
+<span class="c1">// Call contractQuery</span>
+<span class="n">BIFContractCallResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFContractService</span><span class="p">().</span><span class="na">contractQuery</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">BIFContractCallResult</span> <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">();</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">result</span><span class="p">));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>  
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+<li><p>调用合约</p>
+<ol class="arabic">
+<li><p>接口 <code class="docutils literal notranslate"><span class="pre">contractInvoke</span></code></p></li>
+<li><p>用途:</p>
+<p>在链上发出交易调用合约可写接口</p>
+</li>
+<li><p>示例:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">String</span> <span class="n">senderAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:efVmotQW28QDtQyupnKTFvpjKQYs5bxf&quot;</span><span class="p">;</span>
+<span class="n">String</span> <span class="n">contractAddress</span> <span class="o">=</span> <span class="s">&quot;did:bid:ef2gAT82SGdnhj87wQWb9suPKLbnk9NP&quot;</span><span class="p">;</span>
+<span class="n">String</span> <span class="n">senderPrivateKey</span> <span class="o">=</span> <span class="s">&quot;priSPKnDue7AJ42gt7acy4AVaobGJtM871r1eukZ2M6eeW5LxG&quot;</span><span class="p">;</span>
+<span class="n">Long</span> <span class="n">amount</span> <span class="o">=</span> <span class="mi">0</span><span class="n">L</span><span class="p">;</span>
+
+<span class="n">BIFContractInvokeRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BIFContractInvokeRequest</span><span class="p">();</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setSenderAddress</span><span class="p">(</span><span class="n">senderAddress</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setPrivateKey</span><span class="p">(</span><span class="n">senderPrivateKey</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setContractAddress</span><span class="p">(</span><span class="n">contractAddress</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setBIFAmount</span><span class="p">(</span><span class="n">amount</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">setRemarks</span><span class="p">(</span><span class="s">&quot;contract invoke&quot;</span><span class="p">);</span>
+
+<span class="c1">// 调用 bifContractInvoke 接口</span>
+<span class="n">BIFContractInvokeResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="n">sdk</span><span class="p">.</span><span class="na">getBIFContractService</span><span class="p">().</span><span class="na">contractInvoke</span><span class="p">(</span><span class="n">request</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getErrorCode</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">.</span><span class="na">getResult</span><span class="p">()));</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">JsonUtils</span><span class="p">.</span><span class="na">toJSONString</span><span class="p">(</span><span class="n">response</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="%E6%98%9F%E7%81%AB%E9%93%BE%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86.html" class="btn btn-neutral float-left" title="星火链开发基础" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="%E6%98%9F%E7%81%AB%E9%93%BEJavascript%E5%90%88%E7%BA%A6%E5%BC%80%E5%8F%91.html" class="btn btn-neutral float-right" title="星火链Javascript合约开发" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, 中国信息通信研究院.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
