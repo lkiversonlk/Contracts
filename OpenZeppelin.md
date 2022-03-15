@@ -78,6 +78,10 @@ metatx指的是现在比较流行的一种代发交易模式, 用户账户不必
 
 * `BeaconProxy.sol`
 
+    基本的proxy是在合约内部存储当前的implementation的地址, BeaconProxy是通过beacon合约, 每次函数调用时动态获取implementation的地址.
+
+* `IBeacon.sol`
+
 ### ERC1967
 
 * `ERC1967Proxy.sol`
