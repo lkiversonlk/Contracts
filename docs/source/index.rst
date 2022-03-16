@@ -11,3 +11,9 @@ Contents
    utils
    access
    finance
+   govenance
+   metatx
+   proxy
+   security
+   token
+   proxy
