@@ -2832,39 +2832,446 @@ library Checkpoints {
 }
 ```
 
-## Context.sol
+## `Context.sol`
 
-提供了msgSender和msdData的函数式访问方法
+封装了msgSender和msgData的访问, 用来支持metaTx (relayer重放的交易, msgData和msgSender需要指向原值).
 
-## Counters.sol
+* 代码
 
-## Create2.sol
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
-create2 library, 提供函数提前计算地址
+pragma solidity ^0.8.0;
 
-## Multicall.sol
+/**
+ * @dev Provides information about the current execution context, including the
+ * sender of the transaction and its data. While these are generally available
+ * via msg.sender and msg.data, they should not be accessed in such a direct
+ * manner, since when dealing with meta-transactions the account sending and
+ * paying for execution may not be the actual sender (as far as an application
+ * is concerned).
+ *
+ * This contract is only required for intermediate, library-like contracts.
+ */
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
 
-1. function multicall(bytes[] calldata data) external virtual retuns (bytes[] memory results) {
-
+    function _msgData() internal view virtual returns (bytes calldata) {
+        return msg.data;
+    }
 }
+```
+
+## `Counters.sol`
+
+实现了一个计数器, (不太明白有啥必要)..
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/Counters.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @title Counters
+ * @author Matt Condon (@shrugs)
+ * @dev Provides counters that can only be incremented, decremented or reset. This can be used e.g. to track the number
+ * of elements in a mapping, issuing ERC721 ids, or counting request ids.
+ *
+ * Include with `using Counters for Counters.Counter;`
+ */
+library Counters {
+    struct Counter {
+        // This variable should never be directly accessed by users of the library: interactions must be restricted to
+        // the library's function. As of Solidity v0.5.2, this cannot be enforced, though there is a proposal to add
+        // this feature: see https://github.com/ethereum/solidity/issues/4637
+        uint256 _value; // default: 0
+    }
+
+    function current(Counter storage counter) internal view returns (uint256) {
+        return counter._value;
+    }
+
+    function increment(Counter storage counter) internal {
+        unchecked {
+            counter._value += 1;
+        }
+    }
+
+    function decrement(Counter storage counter) internal {
+        uint256 value = counter._value;
+        require(value > 0, "Counter: decrement overflow");
+        unchecked {
+            counter._value = value - 1;
+        }
+    }
+
+    function reset(Counter storage counter) internal {
+        counter._value = 0;
+    }
+}
+```
+
+## `Create2.sol`
+
+create2是Solidity的一个功能, 让合约创建者可以提前知道合约创建的地址, OpenZeppelin的Create2 lib库, 提供了辅助函数, 供使用者根据参数计算出create2创建的合约地址.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/Create2.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Helper to make usage of the `CREATE2` EVM opcode easier and safer.
+ * `CREATE2` can be used to compute in advance the address where a smart
+ * contract will be deployed, which allows for interesting new mechanisms known
+ * as 'counterfactual interactions'.
+ *
+ * See the https://eips.ethereum.org/EIPS/eip-1014#motivation[EIP] for more
+ * information.
+ */
+library Create2 {
+    /**
+     * @dev Deploys a contract using `CREATE2`. The address where the contract
+     * will be deployed can be known in advance via {computeAddress}.
+     *
+     * The bytecode for a contract can be obtained from Solidity with
+     * `type(contractName).creationCode`.
+     *
+     * Requirements:
+     *
+     * - `bytecode` must not be empty.
+     * - `salt` must have not been used for `bytecode` already.
+     * - the factory must have a balance of at least `amount`.
+     * - if `amount` is non-zero, `bytecode` must have a `payable` constructor.
+     */
+    function deploy(
+        uint256 amount,
+        bytes32 salt,
+        bytes memory bytecode
+    ) internal returns (address) {
+        address addr;
+        require(address(this).balance >= amount, "Create2: insufficient balance");
+        require(bytecode.length != 0, "Create2: bytecode length is zero");
+        assembly {
+            addr := create2(amount, add(bytecode, 0x20), mload(bytecode), salt)
+        }
+        require(addr != address(0), "Create2: Failed on deploy");
+        return addr;
+    }
+
+    /**
+     * @dev Returns the address where a contract will be stored if deployed via {deploy}. Any change in the
+     * `bytecodeHash` or `salt` will result in a new destination address.
+     */
+    function computeAddress(bytes32 salt, bytes32 bytecodeHash) internal view returns (address) {
+        return computeAddress(salt, bytecodeHash, address(this));
+    }
+
+    /**
+     * @dev Returns the address where a contract will be stored if deployed via {deploy} from a contract located at
+     * `deployer`. If `deployer` is this contract's address, returns the same value as {computeAddress}.
+     */
+    function computeAddress(
+        bytes32 salt,
+        bytes32 bytecodeHash,
+        address deployer
+    ) internal pure returns (address) {
+        bytes32 _data = keccak256(abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash));
+        return address(uint160(uint256(_data)));
+    }
+}
+```
+## `Multicall.sol`
+
+可以在一个交易里顺序调用多个函数, 依托于`Address`库的`DelegateCall`.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.5.0) (utils/Multicall.sol)
+
+pragma solidity ^0.8.0;
+
+import "./Address.sol";
+
+/**
+ * @dev Provides a function to batch together multiple calls in a single external call.
+ *
+ * _Available since v4.1._
+ */
+abstract contract Multicall {
+    /**
+     * @dev Receives and executes a batch of function calls on this contract.
+     */
+    function multicall(bytes[] calldata data) external virtual returns (bytes[] memory results) {
+        results = new bytes[](data.length);
+        for (uint256 i = 0; i < data.length; i++) {
+            results[i] = Address.functionDelegateCall(address(this), data[i]);
+        }
+        return results;
+    }
+}
+```
 
 ## StorageSlot.sol
 
+Solidity汇编里的slot可以看做变量的指针, 这里通过指定slot固定值来存取对象, 可以防止可升级合约在不同编译器版本导致的变量位置偏移.
 
-基于汇编slot语法, 提供一个对于固定存储位置的访问功能.
+主要用于Proxy模式里存储implementation合约地址的位置.
 
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/StorageSlot.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Library for reading and writing primitive types to specific storage slots.
+ *
+ * Storage slots are often used to avoid storage conflict when dealing with upgradeable contracts.
+ * This library helps with reading and writing to such slots without the need for inline assembly.
+ *
+ * The functions in this library return Slot structs that contain a `value` member that can be used to read or write.
+ *
+ * Example usage to set ERC1967 implementation slot:
+ * ```
+ * contract ERC1967 {
+ *     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+ *
+ *     function _getImplementation() internal view returns (address) {
+ *         return StorageSlot.getAddressSlot(_IMPLEMENTATION_SLOT).value;
+ *     }
+ *
+ *     function _setImplementation(address newImplementation) internal {
+ *         require(Address.isContract(newImplementation), "ERC1967: new implementation is not a contract");
+ *         StorageSlot.getAddressSlot(_IMPLEMENTATION_SLOT).value = newImplementation;
+ *     }
+ * }
+ * ```
+ *
+ * _Available since v4.1 for `address`, `bool`, `bytes32`, and `uint256`._
+ */
+library StorageSlot {
+    struct AddressSlot {
+        address value;
+    }
+
+    struct BooleanSlot {
+        bool value;
+    }
+
+    struct Bytes32Slot {
+        bytes32 value;
+    }
+
+    struct Uint256Slot {
+        uint256 value;
+    }
+
+    /**
+     * @dev Returns an `AddressSlot` with member `value` located at `slot`.
+     */
+    function getAddressSlot(bytes32 slot) internal pure returns (AddressSlot storage r) {
+        assembly {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns an `BooleanSlot` with member `value` located at `slot`.
+     */
+    function getBooleanSlot(bytes32 slot) internal pure returns (BooleanSlot storage r) {
+        assembly {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns an `Bytes32Slot` with member `value` located at `slot`.
+     */
+    function getBytes32Slot(bytes32 slot) internal pure returns (Bytes32Slot storage r) {
+        assembly {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns an `Uint256Slot` with member `value` located at `slot`.
+     */
+    function getUint256Slot(bytes32 slot) internal pure returns (Uint256Slot storage r) {
+        assembly {
+            r.slot := slot
+        }
+    }
+}
+```
 
 ## Strings.sol
 
-1. toString(uint256 value) returns (string memory)
+提供了将整型数字转化为bytes string的方法.
 
-1. toHexString(uint256 value)
+* 代码
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev String operations.
+ */
+library Strings {
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` decimal representation.
+     */
+    function toString(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT licence
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation.
+     */
+    function toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0x00";
+        }
+        uint256 temp = value;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 8;
+        }
+        return toHexString(value, length);
+    }
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
+     */
+    function toHexString(uint256 value, uint256 length) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(2 * length + 2);
+        buffer[0] = "0";
+        buffer[1] = "x";
+        for (uint256 i = 2 * length + 1; i > 1; --i) {
+            buffer[i] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
+        }
+        require(value == 0, "Strings: hex length insufficient");
+        return string(buffer);
+    }
+}
+```
 
 ## Timers.sol
 
-struct Timestamp {
-    uint64 _deadline;
+提供了一个用block.timestamp和指定timer比较的方法.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/Timers.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Tooling for timepoints, timers and delays
+ */
+library Timers {
+    struct Timestamp {
+        uint64 _deadline;
+    }
+
+    function getDeadline(Timestamp memory timer) internal pure returns (uint64) {
+        return timer._deadline;
+    }
+
+    function setDeadline(Timestamp storage timer, uint64 timestamp) internal {
+        timer._deadline = timestamp;
+    }
+
+    function reset(Timestamp storage timer) internal {
+        timer._deadline = 0;
+    }
+
+    function isUnset(Timestamp memory timer) internal pure returns (bool) {
+        return timer._deadline == 0;
+    }
+
+    function isStarted(Timestamp memory timer) internal pure returns (bool) {
+        return timer._deadline > 0;
+    }
+
+    function isPending(Timestamp memory timer) internal view returns (bool) {
+        return timer._deadline > block.timestamp;
+    }
+
+    function isExpired(Timestamp memory timer) internal view returns (bool) {
+        return isStarted(timer) && timer._deadline <= block.timestamp;
+    }
+
+    struct BlockNumber {
+        uint64 _deadline;
+    }
+
+    function getDeadline(BlockNumber memory timer) internal pure returns (uint64) {
+        return timer._deadline;
+    }
+
+    function setDeadline(BlockNumber storage timer, uint64 timestamp) internal {
+        timer._deadline = timestamp;
+    }
+
+    function reset(BlockNumber storage timer) internal {
+        timer._deadline = 0;
+    }
+
+    function isUnset(BlockNumber memory timer) internal pure returns (bool) {
+        return timer._deadline == 0;
+    }
+
+    function isStarted(BlockNumber memory timer) internal pure returns (bool) {
+        return timer._deadline > 0;
+    }
+
+    function isPending(BlockNumber memory timer) internal view returns (bool) {
+        return timer._deadline > block.number;
+    }
+
+    function isExpired(BlockNumber memory timer) internal view returns (bool) {
+        return isStarted(timer) && timer._deadline <= block.number;
+    }
 }
 
-1. getDeadline(Timestamp memory timer) returns uint64
-
+```
