@@ -1130,7 +1130,7 @@ interface IERC1820Implementer {
 
 ### `Math.sol`
 
-Math Library, 提供了基于uint256的一些安全计算, 内部做了溢出检查. 这个库和后面的SafeMath是现在最常用的库之一了.
+Math Library, 提供了基于uint256的几个计算(max, min, average等), 内部做了溢出检查. 这个库和后面的SafeMath是现在最常用的库之一了.
 
 * code
 
@@ -1180,7 +1180,7 @@ library Math {
 }
 ```
 
-### SafeCast.sol
+### `SafeCast.sol`
 
 从uint256, int256向下转型时, solidity并不会默认报错, 而是直接截断. 为了防止智能合约在这块出现预料外情况, SafeCast做了检查, 数值发生截断时会抛出异常.
 
@@ -1430,9 +1430,9 @@ library SafeCast {
 }
 ```
 
-### SafeMath.sol
+### `SafeMath.sol`
 
-曾经Solidity (版本<0.8)在加法减法发生溢出时都不会报错, 所以当时版本的SafeMath实现在add, sub方法时都会加一层结果的检查.
+给uint256类型实现了安全的+, -, *, /, 曾经Solidity (版本<0.8)在加法减法发生溢出时都不会报错, 所以当时版本的SafeMath实现在add, sub方法时都会加一层结果的检查.
 
 目前solidity已经提供了溢出检查, 因此现在的add和sub可以直接调用+和-了.
 
@@ -1668,37 +1668,1169 @@ library SafeMath {
 }
 ```
 
-### SignedMath.sol
+### `SignedMath.sol`
 
-### SignedSafeMath.sol
+SafeMath是为了uint256设计的, SingedMath为int256设计.
+
+### `SignedSafeMath.sol`
+
+为int256 实现了安全的 +, -, * /.
 
 ## structs
 
-### BitMaps.sol
+实现了一些常用的数据结构.
 
-### DoubleEndedQueue.sol
+### `BitMaps.sol`
 
-### EnumerableMap.sol
+bitmap的实现, 跟C++实现差不多.
 
-### EnumerableSet.sol
+* 代码
 
-## Address.sol
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/structs/BitMaps.sol)
+pragma solidity ^0.8.0;
 
-`library Address`
+/**
+ * @dev Library for managing uint256 to bool mapping in a compact and efficient way, providing the keys are sequential.
+ * Largelly inspired by Uniswap's https://github.com/Uniswap/merkle-distributor/blob/master/contracts/MerkleDistributor.sol[merkle-distributor].
+ */
+library BitMaps {
+    struct BitMap {
+        mapping(uint256 => uint256) _data;
+    }
 
-1. isContract
-1. sendValue // use call instead of transfer
-1. function
+    /**
+     * @dev Returns whether the bit at `index` is set.
+     */
+    function get(BitMap storage bitmap, uint256 index) internal view returns (bool) {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        return bitmap._data[bucket] & mask != 0;
+    }
 
-## Array.sol
+    /**
+     * @dev Sets the bit at `index` to the boolean `value`.
+     */
+    function setTo(
+        BitMap storage bitmap,
+        uint256 index,
+        bool value
+    ) internal {
+        if (value) {
+            set(bitmap, index);
+        } else {
+            unset(bitmap, index);
+        }
+    }
 
-## Base64.sol
+    /**
+     * @dev Sets the bit at `index`.
+     */
+    function set(BitMap storage bitmap, uint256 index) internal {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        bitmap._data[bucket] |= mask;
+    }
 
-提供了base64编码的函数
+    /**
+     * @dev Unsets the bit at `index`.
+     */
+    function unset(BitMap storage bitmap, uint256 index) internal {
+        uint256 bucket = index >> 8;
+        uint256 mask = 1 << (index & 0xff);
+        bitmap._data[bucket] &= ~mask;
+    }
+}
+```
 
-## Checkpoints.sol
+### `DoubleEndedQueue.sol`
 
-一个library, 可以存储和读取指定的history value 
+底层基于map实现的一个双端队列, 可以同时在两端添加, 删除元素.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
+
+import "../math/SafeCast.sol";
+
+/**
+ * @dev A sequence of items with the ability to efficiently push and pop items (i.e. insert and remove) on both ends of
+ * the sequence (called front and back). Among other access patterns, it can be used to implement efficient LIFO and
+ * FIFO queues. Storage use is optimized, and all operations are O(1) constant time. This includes {clear}, given that
+ * the existing queue contents are left in storage.
+ *
+ * The struct is called `Bytes32Deque`. Other types can be cast to and from `bytes32`. This data structure can only be
+ * used in storage, and not in memory.
+ * ```
+ * DoubleEndedQueue.Bytes32Deque queue;
+ * ```
+ *
+ * _Available since v4.6._
+ */
+library DoubleEndedQueue {
+    /**
+     * @dev An operation (e.g. {front}) couldn't be completed due to the queue being empty.
+     */
+    error Empty();
+
+    /**
+     * @dev An operation (e.g. {at}) could't be completed due to an index being out of bounds.
+     */
+    error OutOfBounds();
+
+    /**
+     * @dev Indices are signed integers because the queue can grow in any direction. They are 128 bits so begin and end
+     * are packed in a single storage slot for efficient access. Since the items are added one at a time we can safely
+     * assume that these 128-bit indices will not overflow, and use unchecked arithmetic.
+     *
+     * Struct members have an underscore prefix indicating that they are "private" and should not be read or written to
+     * directly. Use the functions provided below instead. Modifying the struct manually may violate assumptions and
+     * lead to unexpected behavior.
+     *
+     * Indices are in the range [begin, end) which means the first item is at data[begin] and the last item is at
+     * data[end - 1].
+     */
+    struct Bytes32Deque {
+        int128 _begin;
+        int128 _end;
+        mapping(int128 => bytes32) _data;
+    }
+
+    /**
+     * @dev Inserts an item at the end of the queue.
+     */
+    function pushBack(Bytes32Deque storage deque, bytes32 value) internal {
+        int128 backIndex = deque._end;
+        deque._data[backIndex] = value;
+        unchecked {
+            deque._end = backIndex + 1;
+        }
+    }
+
+    /**
+     * @dev Removes the item at the end of the queue and returns it.
+     *
+     * Reverts with `Empty` if the queue is empty.
+     */
+    function popBack(Bytes32Deque storage deque) internal returns (bytes32 value) {
+        if (empty(deque)) revert Empty();
+        int128 backIndex;
+        unchecked {
+            backIndex = deque._end - 1;
+        }
+        value = deque._data[backIndex];
+        delete deque._data[backIndex];
+        deque._end = backIndex;
+    }
+
+    /**
+     * @dev Inserts an item at the beginning of the queue.
+     */
+    function pushFront(Bytes32Deque storage deque, bytes32 value) internal {
+        int128 frontIndex;
+        unchecked {
+            frontIndex = deque._begin - 1;
+        }
+        deque._data[frontIndex] = value;
+        deque._begin = frontIndex;
+    }
+
+    /**
+     * @dev Removes the item at the beginning of the queue and returns it.
+     *
+     * Reverts with `Empty` if the queue is empty.
+     */
+    function popFront(Bytes32Deque storage deque) internal returns (bytes32 value) {
+        if (empty(deque)) revert Empty();
+        int128 frontIndex = deque._begin;
+        value = deque._data[frontIndex];
+        delete deque._data[frontIndex];
+        unchecked {
+            deque._begin = frontIndex + 1;
+        }
+    }
+
+    /**
+     * @dev Returns the item at the beginning of the queue.
+     *
+     * Reverts with `Empty` if the queue is empty.
+     */
+    function front(Bytes32Deque storage deque) internal view returns (bytes32 value) {
+        if (empty(deque)) revert Empty();
+        int128 frontIndex = deque._begin;
+        return deque._data[frontIndex];
+    }
+
+    /**
+     * @dev Returns the item at the end of the queue.
+     *
+     * Reverts with `Empty` if the queue is empty.
+     */
+    function back(Bytes32Deque storage deque) internal view returns (bytes32 value) {
+        if (empty(deque)) revert Empty();
+        int128 backIndex;
+        unchecked {
+            backIndex = deque._end - 1;
+        }
+        return deque._data[backIndex];
+    }
+
+    /**
+     * @dev Return the item at a position in the queue given by `index`, with the first item at 0 and last item at
+     * `length(deque) - 1`.
+     *
+     * Reverts with `OutOfBounds` if the index is out of bounds.
+     */
+    function at(Bytes32Deque storage deque, uint256 index) internal view returns (bytes32 value) {
+        // int256(deque._begin) is a safe upcast
+        int128 idx = SafeCast.toInt128(int256(deque._begin) + SafeCast.toInt256(index));
+        if (idx >= deque._end) revert OutOfBounds();
+        return deque._data[idx];
+    }
+
+    /**
+     * @dev Resets the queue back to being empty.
+     *
+     * NOTE: The current items are left behind in storage. This does not affect the functioning of the queue, but misses
+     * out on potential gas refunds.
+     */
+    function clear(Bytes32Deque storage deque) internal {
+        deque._begin = 0;
+        deque._end = 0;
+    }
+
+    /**
+     * @dev Returns the number of items in the queue.
+     */
+    function length(Bytes32Deque storage deque) internal view returns (uint256) {
+        // The interface preserves the invariant that begin <= end so we assume this will not overflow.
+        // We also assume there are at most int256.max items in the queue.
+        unchecked {
+            return uint256(int256(deque._end) - int256(deque._begin));
+        }
+    }
+
+    /**
+     * @dev Returns true if the queue is empty.
+     */
+    function empty(Bytes32Deque storage deque) internal view returns (bool) {
+        return deque._end <= deque._begin;
+    }
+}
+```
+
+### `EnumerableMap.sol`
+
+Solidity自带的map接口没法枚举key, 这里通过增加一个Key Set实现key的枚举.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/structs/EnumerableMap.sol)
+
+pragma solidity ^0.8.0;
+
+import "./EnumerableSet.sol";
+
+/**
+ * @dev Library for managing an enumerable variant of Solidity's
+ * https://solidity.readthedocs.io/en/latest/types.html#mapping-types[`mapping`]
+ * type.
+ *
+ * Maps have the following properties:
+ *
+ * - Entries are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Entries are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableMap for EnumerableMap.UintToAddressMap;
+ *
+ *     // Declare a set state variable
+ *     EnumerableMap.UintToAddressMap private myMap;
+ * }
+ * ```
+ *
+ * The following map types are supported:
+ *
+ * - `uint256 -> address` (`UintToAddressMap`) since v3.0.0
+ * - `address -> uint256` (`AddressToUintMap`) since v4.6.0
+ */
+library EnumerableMap {
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
+    // To implement this library for multiple types with as little code
+    // repetition as possible, we write it in terms of a generic Map type with
+    // bytes32 keys and values.
+    // The Map implementation uses private functions, and user-facing
+    // implementations (such as Uint256ToAddressMap) are just wrappers around
+    // the underlying Map.
+    // This means that we can only create new EnumerableMaps for types that fit
+    // in bytes32.
+
+    struct Map {
+        // Storage of keys
+        EnumerableSet.Bytes32Set _keys;
+        mapping(bytes32 => bytes32) _values;
+    }
+
+    /**
+     * @dev Adds a key-value pair to a map, or updates the value for an existing
+     * key. O(1).
+     *
+     * Returns true if the key was added to the map, that is if it was not
+     * already present.
+     */
+    function _set(
+        Map storage map,
+        bytes32 key,
+        bytes32 value
+    ) private returns (bool) {
+        map._values[key] = value;
+        return map._keys.add(key);
+    }
+
+    /**
+     * @dev Removes a key-value pair from a map. O(1).
+     *
+     * Returns true if the key was removed from the map, that is if it was present.
+     */
+    function _remove(Map storage map, bytes32 key) private returns (bool) {
+        delete map._values[key];
+        return map._keys.remove(key);
+    }
+
+    /**
+     * @dev Returns true if the key is in the map. O(1).
+     */
+    function _contains(Map storage map, bytes32 key) private view returns (bool) {
+        return map._keys.contains(key);
+    }
+
+    /**
+     * @dev Returns the number of key-value pairs in the map. O(1).
+     */
+    function _length(Map storage map) private view returns (uint256) {
+        return map._keys.length();
+    }
+
+    /**
+     * @dev Returns the key-value pair stored at position `index` in the map. O(1).
+     *
+     * Note that there are no guarantees on the ordering of entries inside the
+     * array, and it may change when more entries are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function _at(Map storage map, uint256 index) private view returns (bytes32, bytes32) {
+        bytes32 key = map._keys.at(index);
+        return (key, map._values[key]);
+    }
+
+    /**
+     * @dev Tries to returns the value associated with `key`.  O(1).
+     * Does not revert if `key` is not in the map.
+     */
+    function _tryGet(Map storage map, bytes32 key) private view returns (bool, bytes32) {
+        bytes32 value = map._values[key];
+        if (value == bytes32(0)) {
+            return (_contains(map, key), bytes32(0));
+        } else {
+            return (true, value);
+        }
+    }
+
+    /**
+     * @dev Returns the value associated with `key`.  O(1).
+     *
+     * Requirements:
+     *
+     * - `key` must be in the map.
+     */
+    function _get(Map storage map, bytes32 key) private view returns (bytes32) {
+        bytes32 value = map._values[key];
+        require(value != 0 || _contains(map, key), "EnumerableMap: nonexistent key");
+        return value;
+    }
+
+    /**
+     * @dev Same as {_get}, with a custom error message when `key` is not in the map.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {_tryGet}.
+     */
+    function _get(
+        Map storage map,
+        bytes32 key,
+        string memory errorMessage
+    ) private view returns (bytes32) {
+        bytes32 value = map._values[key];
+        require(value != 0 || _contains(map, key), errorMessage);
+        return value;
+    }
+
+    // UintToAddressMap
+
+    struct UintToAddressMap {
+        Map _inner;
+    }
+
+    /**
+     * @dev Adds a key-value pair to a map, or updates the value for an existing
+     * key. O(1).
+     *
+     * Returns true if the key was added to the map, that is if it was not
+     * already present.
+     */
+    function set(
+        UintToAddressMap storage map,
+        uint256 key,
+        address value
+    ) internal returns (bool) {
+        return _set(map._inner, bytes32(key), bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the key was removed from the map, that is if it was present.
+     */
+    function remove(UintToAddressMap storage map, uint256 key) internal returns (bool) {
+        return _remove(map._inner, bytes32(key));
+    }
+
+    /**
+     * @dev Returns true if the key is in the map. O(1).
+     */
+    function contains(UintToAddressMap storage map, uint256 key) internal view returns (bool) {
+        return _contains(map._inner, bytes32(key));
+    }
+
+    /**
+     * @dev Returns the number of elements in the map. O(1).
+     */
+    function length(UintToAddressMap storage map) internal view returns (uint256) {
+        return _length(map._inner);
+    }
+
+    /**
+     * @dev Returns the element stored at position `index` in the set. O(1).
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(UintToAddressMap storage map, uint256 index) internal view returns (uint256, address) {
+        (bytes32 key, bytes32 value) = _at(map._inner, index);
+        return (uint256(key), address(uint160(uint256(value))));
+    }
+
+    /**
+     * @dev Tries to returns the value associated with `key`.  O(1).
+     * Does not revert if `key` is not in the map.
+     *
+     * _Available since v3.4._
+     */
+    function tryGet(UintToAddressMap storage map, uint256 key) internal view returns (bool, address) {
+        (bool success, bytes32 value) = _tryGet(map._inner, bytes32(key));
+        return (success, address(uint160(uint256(value))));
+    }
+
+    /**
+     * @dev Returns the value associated with `key`.  O(1).
+     *
+     * Requirements:
+     *
+     * - `key` must be in the map.
+     */
+    function get(UintToAddressMap storage map, uint256 key) internal view returns (address) {
+        return address(uint160(uint256(_get(map._inner, bytes32(key)))));
+    }
+
+    /**
+     * @dev Same as {get}, with a custom error message when `key` is not in the map.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryGet}.
+     */
+    function get(
+        UintToAddressMap storage map,
+        uint256 key,
+        string memory errorMessage
+    ) internal view returns (address) {
+        return address(uint160(uint256(_get(map._inner, bytes32(key), errorMessage))));
+    }
+
+    // AddressToUintMap
+
+    struct AddressToUintMap {
+        Map _inner;
+    }
+
+    /**
+     * @dev Adds a key-value pair to a map, or updates the value for an existing
+     * key. O(1).
+     *
+     * Returns true if the key was added to the map, that is if it was not
+     * already present.
+     */
+    function set(
+        AddressToUintMap storage map,
+        address key,
+        uint256 value
+    ) internal returns (bool) {
+        return _set(map._inner, bytes32(uint256(uint160(key))), bytes32(value));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the key was removed from the map, that is if it was present.
+     */
+    function remove(AddressToUintMap storage map, address key) internal returns (bool) {
+        return _remove(map._inner, bytes32(uint256(uint160(key))));
+    }
+
+    /**
+     * @dev Returns true if the key is in the map. O(1).
+     */
+    function contains(AddressToUintMap storage map, address key) internal view returns (bool) {
+        return _contains(map._inner, bytes32(uint256(uint160(key))));
+    }
+
+    /**
+     * @dev Returns the number of elements in the map. O(1).
+     */
+    function length(AddressToUintMap storage map) internal view returns (uint256) {
+        return _length(map._inner);
+    }
+
+    /**
+     * @dev Returns the element stored at position `index` in the set. O(1).
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(AddressToUintMap storage map, uint256 index) internal view returns (address, uint256) {
+        (bytes32 key, bytes32 value) = _at(map._inner, index);
+        return (address(uint160(uint256(key))), uint256(value));
+    }
+
+    /**
+     * @dev Tries to returns the value associated with `key`.  O(1).
+     * Does not revert if `key` is not in the map.
+     *
+     * _Available since v3.4._
+     */
+    function tryGet(AddressToUintMap storage map, address key) internal view returns (bool, uint256) {
+        (bool success, bytes32 value) = _tryGet(map._inner, bytes32(uint256(uint160(key))));
+        return (success, uint256(value));
+    }
+
+    /**
+     * @dev Returns the value associated with `key`.  O(1).
+     *
+     * Requirements:
+     *
+     * - `key` must be in the map.
+     */
+    function get(AddressToUintMap storage map, address key) internal view returns (uint256) {
+        return uint256(_get(map._inner, bytes32(uint256(uint160(key)))));
+    }
+}
+```
+
+### `EnumerableSet.sol`
+
+实现了可枚举Set, 具体实现还是考虑了很多区块链的编程局限的, 对于交易内访问, 建议用index指定索引访问. 对于view请求, 可以用`Values`函数获取全部枚举.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.1 (utils/structs/EnumerableSet.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Library for managing
+ * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
+ * types.
+ *
+ * Sets have the following properties:
+ *
+ * - Elements are added, removed, and checked for existence in constant time
+ * (O(1)).
+ * - Elements are enumerated in O(n). No guarantees are made on the ordering.
+ *
+ * ```
+ * contract Example {
+ *     // Add the library methods
+ *     using EnumerableSet for EnumerableSet.AddressSet;
+ *
+ *     // Declare a set state variable
+ *     EnumerableSet.AddressSet private mySet;
+ * }
+ * ```
+ *
+ * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)
+ * and `uint256` (`UintSet`) are supported.
+ */
+library EnumerableSet {
+    // To implement this library for multiple types with as little code
+    // repetition as possible, we write it in terms of a generic Set type with
+    // bytes32 values.
+    // The Set implementation uses private functions, and user-facing
+    // implementations (such as AddressSet) are just wrappers around the
+    // underlying Set.
+    // This means that we can only create new EnumerableSets for types that fit
+    // in bytes32.
+
+    struct Set {
+        // Storage of set values
+        bytes32[] _values;
+        // Position of the value in the `values` array, plus 1 because index 0
+        // means a value is not in the set.
+        mapping(bytes32 => uint256) _indexes;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function _add(Set storage set, bytes32 value) private returns (bool) {
+        if (!_contains(set, value)) {
+            set._values.push(value);
+            // The value is stored at length-1, but we add 1 to all indexes
+            // and use 0 as a sentinel value
+            set._indexes[value] = set._values.length;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function _remove(Set storage set, bytes32 value) private returns (bool) {
+        // We read and store the value's index to prevent multiple reads from the same storage slot
+        uint256 valueIndex = set._indexes[value];
+
+        if (valueIndex != 0) {
+            // Equivalent to contains(set, value)
+            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in
+            // the array, and then remove the last element (sometimes called as 'swap and pop').
+            // This modifies the order of the array, as noted in {at}.
+
+            uint256 toDeleteIndex = valueIndex - 1;
+            uint256 lastIndex = set._values.length - 1;
+
+            if (lastIndex != toDeleteIndex) {
+                bytes32 lastValue = set._values[lastIndex];
+
+                // Move the last value to the index where the value to delete is
+                set._values[toDeleteIndex] = lastValue;
+                // Update the index for the moved value
+                set._indexes[lastValue] = valueIndex; // Replace lastValue's index to valueIndex
+            }
+
+            // Delete the slot where the moved value was stored
+            set._values.pop();
+
+            // Delete the index for the deleted slot
+            delete set._indexes[value];
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function _contains(Set storage set, bytes32 value) private view returns (bool) {
+        return set._indexes[value] != 0;
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function _length(Set storage set) private view returns (uint256) {
+        return set._values.length;
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function _at(Set storage set, uint256 index) private view returns (bytes32) {
+        return set._values[index];
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function _values(Set storage set) private view returns (bytes32[] memory) {
+        return set._values;
+    }
+
+    // Bytes32Set
+
+    struct Bytes32Set {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _add(set._inner, value);
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {
+        return _remove(set._inner, value);
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
+        return _contains(set._inner, value);
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(Bytes32Set storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
+        return _at(set._inner, index);
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(Bytes32Set storage set) internal view returns (bytes32[] memory) {
+        return _values(set._inner);
+    }
+
+    // AddressSet
+
+    struct AddressSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(AddressSet storage set, address value) internal returns (bool) {
+        return _add(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(AddressSet storage set, address value) internal returns (bool) {
+        return _remove(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(uint256(uint160(value))));
+    }
+
+    /**
+     * @dev Returns the number of values in the set. O(1).
+     */
+    function length(AddressSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
+        return address(uint160(uint256(_at(set._inner, index))));
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(AddressSet storage set) internal view returns (address[] memory) {
+        bytes32[] memory store = _values(set._inner);
+        address[] memory result;
+
+        assembly {
+            result := store
+        }
+
+        return result;
+    }
+
+    // UintSet
+
+    struct UintSet {
+        Set _inner;
+    }
+
+    /**
+     * @dev Add a value to a set. O(1).
+     *
+     * Returns true if the value was added to the set, that is if it was not
+     * already present.
+     */
+    function add(UintSet storage set, uint256 value) internal returns (bool) {
+        return _add(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Removes a value from a set. O(1).
+     *
+     * Returns true if the value was removed from the set, that is if it was
+     * present.
+     */
+    function remove(UintSet storage set, uint256 value) internal returns (bool) {
+        return _remove(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
+        return _contains(set._inner, bytes32(value));
+    }
+
+    /**
+     * @dev Returns the number of values on the set. O(1).
+     */
+    function length(UintSet storage set) internal view returns (uint256) {
+        return _length(set._inner);
+    }
+
+    /**
+     * @dev Returns the value stored at position `index` in the set. O(1).
+     *
+     * Note that there are no guarantees on the ordering of values inside the
+     * array, and it may change when more values are added or removed.
+     *
+     * Requirements:
+     *
+     * - `index` must be strictly less than {length}.
+     */
+    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
+        return uint256(_at(set._inner, index));
+    }
+
+    /**
+     * @dev Return the entire set in an array
+     *
+     * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
+     * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
+     * this function has an unbounded cost, and using it as part of a state-changing function may render the function
+     * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
+     */
+    function values(UintSet storage set) internal view returns (uint256[] memory) {
+        bytes32[] memory store = _values(set._inner);
+        uint256[] memory result;
+
+        assembly {
+            result := store
+        }
+
+        return result;
+    }
+}
+```
+
+## `Address.sol`
+
+为Address类型增加的一些辅助函数, 包括以下几个:
+
+* isContract
+
+检查地址上的code是否为0
+
+* sendValue
+
+调用`call`方法, 避免send和transfer函数gas设置的限制.
+
+* functionCall
+
+## `Array.sol`
+
+实现了一个辅助函数, 功能很简单.
+
+## `Base64.sol`
+
+提供了base64编码的函数 `encode(bytes memory data)`
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.5.0) (utils/Base64.sol)
+
+pragma solidity ^0.8.0;
+
+/**
+ * @dev Provides a set of functions to operate with Base64 strings.
+ *
+ * _Available since v4.5._
+ */
+library Base64 {
+    /**
+     * @dev Base64 Encoding/Decoding Table
+     */
+    string internal constant _TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    /**
+     * @dev Converts a `bytes` to its Bytes64 `string` representation.
+     */
+    function encode(bytes memory data) internal pure returns (string memory) {
+        /**
+         * Inspired by Brecht Devos (Brechtpd) implementation - MIT licence
+         * https://github.com/Brechtpd/base64/blob/e78d9fd951e7b0977ddca77d92dc85183770daf4/base64.sol
+         */
+        if (data.length == 0) return "";
+
+        // Loads the table into memory
+        string memory table = _TABLE;
+
+        // Encoding takes 3 bytes chunks of binary data from `bytes` data parameter
+        // and split into 4 numbers of 6 bits.
+        // The final Base64 length should be `bytes` data length multiplied by 4/3 rounded up
+        // - `data.length + 2`  -> Round up
+        // - `/ 3`              -> Number of 3-bytes chunks
+        // - `4 *`              -> 4 characters for each chunk
+        string memory result = new string(4 * ((data.length + 2) / 3));
+
+        assembly {
+            // Prepare the lookup table (skip the first "length" byte)
+            let tablePtr := add(table, 1)
+
+            // Prepare result pointer, jump over length
+            let resultPtr := add(result, 32)
+
+            // Run over the input, 3 bytes at a time
+            for {
+                let dataPtr := data
+                let endPtr := add(data, mload(data))
+            } lt(dataPtr, endPtr) {
+
+            } {
+                // Advance 3 bytes
+                dataPtr := add(dataPtr, 3)
+                let input := mload(dataPtr)
+
+                // To write each character, shift the 3 bytes (18 bits) chunk
+                // 4 times in blocks of 6 bits for each character (18, 12, 6, 0)
+                // and apply logical AND with 0x3F which is the number of
+                // the previous character in the ASCII table prior to the Base64 Table
+                // The result is then added to the table to get the character to write,
+                // and finally write it in the result pointer but with a left shift
+                // of 256 (1 byte) - 8 (1 ASCII char) = 248 bits
+
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(18, input), 0x3F))))
+                resultPtr := add(resultPtr, 1) // Advance
+
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(12, input), 0x3F))))
+                resultPtr := add(resultPtr, 1) // Advance
+
+                mstore8(resultPtr, mload(add(tablePtr, and(shr(6, input), 0x3F))))
+                resultPtr := add(resultPtr, 1) // Advance
+
+                mstore8(resultPtr, mload(add(tablePtr, and(input, 0x3F))))
+                resultPtr := add(resultPtr, 1) // Advance
+            }
+
+            // When data `bytes` is not exactly 3 bytes long
+            // it is padded with `=` characters at the end
+            switch mod(mload(data), 3)
+            case 1 {
+                mstore8(sub(resultPtr, 1), 0x3d)
+                mstore8(sub(resultPtr, 2), 0x3d)
+            }
+            case 2 {
+                mstore8(sub(resultPtr, 1), 0x3d)
+            }
+        }
+
+        return result;
+    }
+}
+```
+
+## `Checkpoints.sol`
+
+提供了一个CheckPoint功能, 函数可以按block号存取一些自定义的uint224值.
+
+* 代码
+
+```
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v4.5.0) (utils/Checkpoints.sol)
+pragma solidity ^0.8.0;
+
+import "./math/Math.sol";
+import "./math/SafeCast.sol";
+
+/**
+ * @dev This library defines the `History` struct, for checkpointing values as they change at different points in
+ * time, and later looking up past values by block number. See {Votes} as an example.
+ *
+ * To create a history of checkpoints define a variable type `Checkpoints.History` in your contract, and store a new
+ * checkpoint for the current transaction block using the {push} function.
+ *
+ * _Available since v4.5._
+ */
+library Checkpoints {
+    struct Checkpoint {
+        uint32 _blockNumber;
+        uint224 _value;
+    }
+
+    struct History {
+        Checkpoint[] _checkpoints;
+    }
+
+    /**
+     * @dev Returns the value in the latest checkpoint, or zero if there are no checkpoints.
+     */
+    function latest(History storage self) internal view returns (uint256) {
+        uint256 pos = self._checkpoints.length;
+        return pos == 0 ? 0 : self._checkpoints[pos - 1]._value;
+    }
+
+    /**
+     * @dev Returns the value at a given block number. If a checkpoint is not available at that block, the closest one
+     * before it is returned, or zero otherwise.
+     */
+    function getAtBlock(History storage self, uint256 blockNumber) internal view returns (uint256) {
+        require(blockNumber < block.number, "Checkpoints: block not yet mined");
+
+        uint256 high = self._checkpoints.length;
+        uint256 low = 0;
+        while (low < high) {
+            uint256 mid = Math.average(low, high);
+            if (self._checkpoints[mid]._blockNumber > blockNumber) {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return high == 0 ? 0 : self._checkpoints[high - 1]._value;
+    }
+
+    /**
+     * @dev Pushes a value onto a History so that it is stored as the checkpoint for the current block.
+     *
+     * Returns previous value and new value.
+     */
+    function push(History storage self, uint256 value) internal returns (uint256, uint256) {
+        uint256 pos = self._checkpoints.length;
+        uint256 old = latest(self);
+        if (pos > 0 && self._checkpoints[pos - 1]._blockNumber == block.number) {
+            self._checkpoints[pos - 1]._value = SafeCast.toUint224(value);
+        } else {
+            self._checkpoints.push(
+                Checkpoint({_blockNumber: SafeCast.toUint32(block.number), _value: SafeCast.toUint224(value)})
+            );
+        }
+        return (old, value);
+    }
+
+    /**
+     * @dev Pushes a value onto a History, by updating the latest value using binary operation `op`. The new value will
+     * be set to `op(latest, delta)`.
+     *
+     * Returns previous value and new value.
+     */
+    function push(
+        History storage self,
+        function(uint256, uint256) view returns (uint256) op,
+        uint256 delta
+    ) internal returns (uint256, uint256) {
+        return push(self, op(latest(self), delta));
+    }
+}
+```
 
 ## Context.sol
 
