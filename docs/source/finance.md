@@ -1,4 +1,4 @@
-# finance
+# Finance 财务类合约
 
 finance下提供了一些有关奖励分成, 投资质押等财务相关的合约.
 

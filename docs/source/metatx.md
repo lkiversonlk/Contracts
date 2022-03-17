@@ -1,4 +1,4 @@
-# metatx
+# Metatx Meta交易
 
 metatx指的是现在比较流行的一种代发交易模式, 用户账户不必有足够的油费, 而且交易签名后发送给replayer, replayer代替用户发出该交易. [参考链接.](https://betterprogramming.pub/ethereum-erc-20-meta-transactions-4cacbb3630ee)
 
