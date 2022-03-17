@@ -16,4 +16,3 @@ Contents
    proxy
    security
    token
-   proxy
