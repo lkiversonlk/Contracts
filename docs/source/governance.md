@@ -969,4 +969,16 @@ abstract contract Governor is Context, ERC165, EIP712, IGovernor {
 
 ### `GovernorProposalThreshold.sol`
 
+### `GovernorSetting.sol`
+
+### `GovernorTimelockCompound.sol`
+
+### `GovernorTimelockControl.sol`
+
+### `GovernorVotes.sol`
+
+### `GovernorVotesComp.sol`
+
+### `GovernorVotesQuorumFraction.sol`
+
 ## utils
