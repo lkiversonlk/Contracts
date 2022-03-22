@@ -17,3 +17,4 @@ OpenZeppelin是一套用Solidity语言编写, 基于EVM架构的智能合约库.
    proxy
    security
    token
+   governance
